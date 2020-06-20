@@ -1,6 +1,6 @@
 let config = require("visual-config-exposer").default;
 
-const DEBUG = false;
+const DEBUG = true;
 
 function getTeams() {
     let result = [];
@@ -11,14 +11,41 @@ function getTeams() {
 }
 
 const Teams = getTeams();
+
 const ChooseTeamText = "Choose your team";
 const ChooseOversText = "Choose overs";
+
 const ButtonSize = 100;
 const ButtonOffset = 25;
+
 const TeamSquareStroke = 255;
+
 const OverButtonFillColor = 255;
 const OverButtonTextColor = 0;
 const OverButtonStrokeColor = 0;
+
+const BallsPerOver = 6;
+
+const GroundLineColor = 255;
+
+const BallDiameter = 20;
+const MinBallGravity = 250;
+const MaxBallGravity = 350;
+const BallGravityIncrementor = 400;
+const MinBallSpeed = -500;
+const MaxBallSpeed = -300;
+
+let GroundHeight;
+let MinBallHeight;
+let MaxBallHeight;
+let PlayerPositionX;
+
+function init() {
+    GroundHeight = height - height / 7;
+    MinBallHeight = GroundHeight * 0.6;
+    MaxBallHeight = GroundHeight * 0.4;
+    PlayerPositionX = width * 0.2;
+}
 
 class TeamButton {
     constructor(x, y, data, onPress) {
@@ -91,9 +118,61 @@ class OverButton extends TeamButton {
     }
 }
 
+class Ball {
+    constructor() {
+        this.ix = width - 100;
+        this.iy = floor(random(MaxBallHeight, MinBallHeight));
+        this.rect = Rectangle.FromPosition(this.ix, this.iy, BallDiameter);
+        this.acc = {
+            x: 0,
+            y: 0,
+        };
+        this.canThrow = true;
+        this.thrown = false;
+    }
+
+    draw() {
+        fill(255, 255, 0);
+        circle(this.rect.center().x, this.rect.center().y, this.rect.w);
+        this.rect.debug();
+    }
+
+    update() {
+        if (this.thrown) {
+            this.rect.x += this.acc.x * (deltaTime / 1000);
+            this.rect.y += this.acc.y * (deltaTime / 1000);
+
+            this.acc.y += BallGravityIncrementor * (deltaTime / 1000);
+
+            if (this.rect.bottom() > GroundHeight) {
+                this.acc.y *= -1;
+                // to prevent error
+                this.rect.y = GroundHeight - 2 - this.rect.w;
+            }
+        }
+
+        if (this.rect.right() < 0) {
+            this.canThrow = true;
+            this.thrown = false;
+        }
+    }
+
+    throw() {
+        this.acc.x = floor(random(MinBallSpeed, MaxBallSpeed));
+        this.acc.y = floor(random(MinBallGravity, MaxBallGravity));
+        this.rect.x = this.ix;
+        this.rect.y = this.iy;
+        this.canThrow = false;
+        this.thrown = true;
+    }
+}
+
 class Game {
     constructor() {
         this.defaults();
+
+        init();
+
         this.chose = false;
 
         this.teamButtons = [];
@@ -134,6 +213,9 @@ class Game {
 
         this.team = undefined;
         this.overCount = undefined;
+        this.ballCount = undefined;
+
+        this.ball = new Ball();
     }
 
     permaUpdate() {
@@ -141,6 +223,26 @@ class Game {
         if (!this.chose) {
             this.choose();
         } else {
+            this.updateGame();
+        }
+    }
+
+    updateGame() {
+        if (DEBUG) {
+            fill(255, 0, 0);
+            rect(width - 10, MinBallHeight - 5, 10, 10);
+            rect(width - 10, MaxBallHeight - 5, 10, 10);
+            rect(PlayerPositionX, GroundHeight - 30, 10, 30);
+        }
+
+        stroke(GroundLineColor);
+        strokeWeight(3);
+        line(0, GroundHeight, width, GroundHeight);
+
+        this.ball.draw();
+
+        if (!this.paused) {
+            this.ball.update();
         }
     }
 
@@ -151,13 +253,15 @@ class Game {
         textAlign(CENTER);
         noStroke();
         fill(config.settings.textColor);
-        text(ChooseTeamText, 20, 40, width - 40, this.instructionsFontSize * 1.8);
-     
+
         if (!this.team) {
+            text(ChooseTeamText, 20, 40, width - 40, this.instructionsFontSize * 1.8);
             this.teamButtons.map((b) => {
                 b.draw();
             });
         } else if (!this.overCount) {
+            text(ChooseOversText, 20, 40, width - 40, this.instructionsFontSize * 1.8);
+
             this.overButtons.map((b) => {
                 b.draw();
             });
@@ -165,12 +269,16 @@ class Game {
 
         if (this.team && this.overCount) {
             this.chose = true;
+            this.ballCount = this.overCount * BallsPerOver;
+            console.log("Balls: ", this.ballCount);
         }
     }
 
-    updateGame() {}
-
-    onMousePress() {}
+    onMousePress() {
+        if (this.chose && this.ball.canThrow) {
+            this.ball.throw();
+        }
+    }
 
     finishGame() {
         if (!this.finished) {
@@ -203,6 +311,7 @@ class Game {
     mousePressed() {
         if (mouseIsPressed && !this.mouse_pressed) {
             this.mouse_pressed = true;
+            this.onMousePress();
         } else if (!mouseIsPressed) {
             this.mouse_pressed = false;
         }
@@ -485,6 +594,7 @@ class Rectangle {
     debug() {
         if (DEBUG) {
             stroke(this.debugColor);
+            strokeWeight(1);
             rectMode(CORNER);
             noFill();
             rect(this.x, this.y, this.w, this.h);
