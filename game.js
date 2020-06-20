@@ -2,22 +2,175 @@ let config = require("visual-config-exposer").default;
 
 const DEBUG = false;
 
+function getTeams() {
+    let result = [];
+    for (let key in config.settings.teams) {
+        result.push(config.settings.teams[key]);
+    }
+    return result;
+}
+
+const Teams = getTeams();
+const ChooseTeamText = "Choose your team";
+const ChooseOversText = "Choose overs";
+const ButtonSize = 100;
+const ButtonOffset = 25;
+const TeamSquareStroke = 255;
+const OverButtonFillColor = 255;
+const OverButtonTextColor = 0;
+const OverButtonStrokeColor = 0;
+
+class TeamButton {
+    constructor(x, y, data, onPress) {
+        this.rect = new Rectangle(x, y, ButtonSize, ButtonSize);
+        this.hoverRect = Rectangle.FromPosition(this.rect.center().x, this.rect.center().y, ButtonSize * 1.1);
+        this.data = data;
+        this.hover = false;
+        this.onPress = onPress;
+        this.lastPress = false;
+    }
+
+    update() {
+        if (!this.hover) {
+            if (this.rect.includes({ x: mouseX, y: mouseY })) {
+                this.hover = true;
+            }
+        } else {
+            if (!this.hoverRect.includes({ x: mouseX, y: mouseY })) {
+                this.hover = false;
+            }
+        }
+
+        if (this.hover && !mouseIsPressed && this.lastPress == true) {
+            this.onPress();
+        }
+        this.lastPress = mouseIsPressed;
+    }
+
+    draw() {
+        this.update();
+
+        fill(this.data.color);
+        strokeWeight(3);
+        stroke(TeamSquareStroke);
+
+        if (this.hover) {
+            this.hoverRect.draw();
+        } else {
+            this.rect.draw();
+        }
+    }
+}
+
+class OverButton extends TeamButton {
+    constructor(x, y, number, onPress) {
+        super(x, y, null, onPress);
+        this.number = number;
+    }
+
+    draw() {
+        this.update();
+
+        strokeWeight(3);
+        stroke(OverButtonStrokeColor);
+        fill(OverButtonFillColor);
+        textAlign(CENTER, CENTER);
+        if (this.hover) {
+            this.hoverRect.draw();
+            noStroke();
+            textSize(this.hoverRect.h * 0.7);
+            fill(OverButtonTextColor);
+            this.hoverRect.textInside(this.number);
+        } else {
+            this.rect.draw();
+            noStroke();
+            textSize(this.rect.h * 0.7);
+            fill(OverButtonTextColor);
+            this.rect.textInside(this.number);
+        }
+    }
+}
+
 class Game {
     constructor() {
         this.defaults();
+        this.chose = false;
+
+        this.teamButtons = [];
+        this.overButtons = [];
+
+        let step = ButtonSize + ButtonOffset;
+        let sx = width / 2 - (Teams.length / 2) * step;
+        let y = height / 3;
+
+        for (let i = 0; i < Teams.length; i++) {
+            let x = sx + step * i;
+            this.teamButtons.push(
+                new TeamButton(x, y, { color: Teams[i] }, () => {
+                    if (!this.team) {
+                        this.team = Teams[i];
+                        console.log("Team: ", this.team);
+                    }
+                })
+            );
+        }
+
+        sx = width / 2 - (3 / 2) * step;
+        for (let i = 0; i < 3; i++) {
+            let x = sx + step * i;
+            let n;
+            if (i == 0) n = 2;
+            if (i == 1) n = 5;
+            if (i == 2) n = 10;
+            this.overButtons.push(
+                new OverButton(x, y, n, () => {
+                    if (!this.overCount) {
+                        this.overCount = n;
+                        console.log("Overs: ", this.overCount);
+                    }
+                })
+            );
+        }
+
+        this.team = undefined;
+        this.overCount = undefined;
     }
 
     permaUpdate() {
-
+        // choose team state;
+        if (!this.chose) {
+            this.choose();
+        } else {
+        }
     }
 
-    updateGame() {
+    choose() {
+        // draw choose team text
+        textFont(config.preGameScreen.fontFamily);
+        textSize(this.instructionsFontSize * 1.6);
+        textAlign(CENTER);
+        noStroke();
+        fill(config.settings.textColor);
+        text(ChooseTeamText, 20, 40, width - 40, this.instructionsFontSize * 1.8);
+     
+        if (!this.team) {
+            this.teamButtons.map((b) => {
+                b.draw();
+            });
+        } else if (!this.overCount) {
+            this.overButtons.map((b) => {
+                b.draw();
+            });
+        }
 
+        if (this.team && this.overCount) {
+            this.chose = true;
+        }
     }
 
-    onMousePress() {
-    
-    }
+    updateGame() {}
+
+    onMousePress() {}
 
     finishGame() {
         if (!this.finished) {
@@ -34,9 +187,9 @@ class Game {
 
         // turn this var to true to end the game
         this.finished = false;
-        
+
         this.particles = [];
-    
+
         this.instructionsFontSize = height / 30;
         this.scoreFontSize = height / 20;
         this.delayBeforeExit = 1.2;
@@ -50,16 +203,9 @@ class Game {
     mousePressed() {
         if (mouseIsPressed && !this.mouse_pressed) {
             this.mouse_pressed = true;
-
-            if (!this.started) {
-                this.started = true;
-            }
-            if (this.started) {
-                this.onMousePress();
-            }
-        } else if (!mouseIsPressed ){
+        } else if (!mouseIsPressed) {
             this.mouse_pressed = false;
-        }        
+        }
     }
 
     calcBgImageSize() {
@@ -67,24 +213,30 @@ class Game {
         this.bgImage = window.images.background;
         let originalRatios = {
             width: window.innerWidth / this.bgImage.width,
-            height: window.innerHeight / this.bgImage.height
+            height: window.innerHeight / this.bgImage.height,
         };
- 
+
         let coverRatio = Math.max(originalRatios.width, originalRatios.height);
         this.bgImageWidth = this.bgImage.width * coverRatio;
         this.bgImageHeight = this.bgImage.height * coverRatio;
     }
 
     draw() {
-        clear();    
+        clear();
         try {
-            image(this.bgImage, width / 2 - this.bgImageWidth / 2, height / 2 - this.bgImageHeight / 2, this.bgImageWidth, this.bgImageHeight);
+            image(
+                this.bgImage,
+                width / 2 - this.bgImageWidth / 2,
+                height / 2 - this.bgImageHeight / 2,
+                this.bgImageWidth,
+                this.bgImageHeight
+            );
         } catch (err) {
             this.calcBgImageSize();
         }
 
         if (window.currentScreen == "gameScreen") {
-            // Draw fps if in debug mode           
+            // Draw fps if in debug mode
             if (DEBUG) {
                 noStroke();
                 fill(0);
@@ -102,38 +254,37 @@ class Game {
                 this.updateGame();
             }
 
-            this.particles = this.particles.filter(p => {
+            this.particles = this.particles.filter((p) => {
                 p.draw();
                 return !p.dead;
-            })
+            });
 
-            // Animate instructions font size 
+            // Animate instructions font size
             // in and out
-            if (this.instructionsFontSize - this.c_instructionsFontSize > 0.1 && !this.started) {
-                this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, this.instructionsFontSize, 0.2);
-            }
+            // if (this.instructionsFontSize - this.c_instructionsFontSize > 0.1 && !this.started) {
+            // this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, this.instructionsFontSize, 0.2);
+            // }
 
-            if (this.c_instructionsFontSize > 0.1) {
-           
-                if (this.started) {
-                    this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, 0, 0.4); 
-                }
-                
-                textStyle(NORMAL);
-                noStroke();
-                fill(color(config.settings.textColor));
-                textFont(config.preGameScreen.fontFamily);
-                textSize(this.c_instructionsFontSize);
-                textAlign(CENTER);
+            // if (this.c_instructionsFontSize > 0.1) {
+            // if (this.started) {
+            // this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, 0, 0.4);
+            // }
 
-                text(config.settings.instructions1, width / 2, height / 10);
-                text(config.settings.instructions2, width / 2, (height / 10) * 1.5);
-                text(config.settings.instructions3, width / 2, (height / 10) * 2);
-            }
+            // textStyle(NORMAL);
+            // noStroke();
+            // fill(color(config.settings.textColor));
+            // textFont(config.preGameScreen.fontFamily);
+            // textSize(this.c_instructionsFontSize);
+            // textAlign(CENTER);
+
+            // text(config.settings.instructions1, width / 2, height / 10);
+            // text(config.settings.instructions2, width / 2, (height / 10) * 1.5);
+            // text(config.settings.instructions3, width / 2, (height / 10) * 2);
+            // }
 
             if (this.started) {
                 this.c_scoreFontSize = lerp(this.c_scoreFontSize, this.scoreFontSize, 0.2);
-                
+
                 textStyle(NORMAL);
                 noStroke();
                 fill(color(config.settings.textColor));
@@ -145,11 +296,11 @@ class Game {
 
             if (this.finished) {
                 this.delayBeforeExit -= deltaTime / 1000;
-            
+
                 if (this.delayBeforeExit < 0) {
                     window.setEndScreenWithScore(this.score);
                 }
-            }       
+            }
         }
     }
 }
@@ -205,7 +356,9 @@ class FloatingText {
                 to: { size: 0 },
                 duration: this.iLifespan * 1000,
                 easing: this.easing,
-                step: state => { this.size = state.size }
+                step: (state) => {
+                    this.size = state.size;
+                },
             });
             this.startEase = true;
         }
@@ -214,7 +367,6 @@ class FloatingText {
         this.dead = this.lifespan <= 0;
 
         if (!this.dead) {
-
             this.x += this.acc.x;
             this.y += this.acc.y;
 
@@ -255,7 +407,6 @@ class Particle {
     }
 
     draw() {
-
         if (!this.startEase) {
             this.startEase = true;
             shifty.tween({
@@ -263,18 +414,19 @@ class Particle {
                 to: { size: 0 },
                 duration: this.iLifespan * 1000,
                 easing: this.easing,
-                step: state => { this.size = state.size; }  
+                step: (state) => {
+                    this.size = state.size;
+                },
             });
         }
 
         this.lifespan -= deltaTime / 1000;
 
-        this.rotation += this.rotSpeed * deltaTime / 1000;
+        this.rotation += (this.rotSpeed * deltaTime) / 1000;
 
         this.dead = this.lifespan <= 0;
 
         if (!this.dead) {
-
             this.x += this.acc.x;
             this.y += this.acc.y;
 
@@ -304,7 +456,7 @@ class Rectangle {
     }
 
     center() {
-        return new Vector2(this.x + this.w / 2, this.y + this.h / 2);
+        return createVector(this.x + this.w / 2, this.y + this.h / 2);
     }
 
     top() {
@@ -329,7 +481,7 @@ class Rectangle {
         }
         return false;
     }
-    
+
     debug() {
         if (DEBUG) {
             stroke(this.debugColor);
@@ -339,16 +491,21 @@ class Rectangle {
         }
     }
 
+    draw() {
+        rect(this.x, this.y, this.w, this.h);
+    }
+
+    textInside(txt) {
+        text(txt, this.x, this.y, this.w, this.h);
+    }
+
     static FromPosition(x, y, w, h = w) {
         return new Rectangle(x - w / 2, y - h / 2, w, h);
     }
 }
 
 function intersectRect(r1, r2) {
-    return !(r2.left() > r1.right() ||
-        r2.right() < r1.left() ||
-        r2.top() > r1.bottom() ||
-        r2.bottom() < r1.top());
+    return !(r2.left() > r1.right() || r2.right() < r1.left() || r2.top() > r1.bottom() || r2.bottom() < r1.top());
 }
 
 function randomParticleAcc(amt) {
@@ -362,6 +519,6 @@ function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
     return { width: srcWidth * ratio, height: srcHeight * ratio };
 }
 
-//------------------------------ 
+//------------------------------
 
 module.exports = Game;

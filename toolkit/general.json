@@ -14,7 +14,7 @@
                 {
                     "key": "titleTextSize",
                     "header": "Title text size",
-                    "type": "range",
+                   "type": "range",
                     "options": {
                         "minValue": 20,
                         "maxValue": 40,
@@ -113,6 +113,23 @@
                     "key": "instructions3",
                     "type": "text",
                     "header": "Instructions Text 3"
+                },
+                {
+                    "key": "teams",
+                    "type": "array",
+                    "header": "Teams array",
+                    "fields": [
+                        {
+                            "key": "t1",
+                            "header": "Team 1",
+                            "type": "color"
+                        },
+                        {
+                            "key": "t2",
+                            "header": "Team 2",
+                            "type": "color"
+                        }
+                    ]
                 },
                 {
                     "key": "textColor",
@@ -268,6 +285,10 @@
             "instructions2": "Place new blocks over the old ones",
             "instructions3": "Have fun!",
             "textColor": "#000",
+            "teams": {
+                "t1": "#0000ff",
+                "t2": "#ff0000"
+            },
             "theme": "assets/theme.mp3",
             "volume": "0.7",
             "tap": "assets/tap.wav",
