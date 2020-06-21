@@ -29,11 +29,11 @@ const BallsPerOver = 6;
 const GroundLineColor = 255;
 
 const BallDiameter = 20;
-const MinBallGravity = 250;
-const MaxBallGravity = 350;
-const BallGravityIncrementor = 400;
-const MinBallSpeed = -500;
-const MaxBallSpeed = -300;
+const MinBallAngle = 130;
+const MaxBallAngle = 200;
+const BallGravityIncrementor = 600;
+const MinBallSpeed = 700;
+const MaxBallSpeed = 450;
 
 let GroundHeight;
 let MinBallHeight;
@@ -78,7 +78,7 @@ class TeamButton {
         this.update();
 
         fill(this.data.color);
-        strokeWeight(3);
+        strokeWeight(5);
         stroke(TeamSquareStroke);
 
         if (this.hover) {
@@ -98,35 +98,36 @@ class OverButton extends TeamButton {
     draw() {
         this.update();
 
-        strokeWeight(3);
+        strokeWeight(5);
         stroke(OverButtonStrokeColor);
         fill(OverButtonFillColor);
         textAlign(CENTER, CENTER);
+        let size;
         if (this.hover) {
             this.hoverRect.draw();
-            noStroke();
-            textSize(this.hoverRect.h * 0.7);
-            fill(OverButtonTextColor);
-            this.hoverRect.textInside(this.number);
+            size = this.hoverRect.h * 0.7;
         } else {
             this.rect.draw();
-            noStroke();
-            textSize(this.rect.h * 0.7);
-            fill(OverButtonTextColor);
-            this.rect.textInside(this.number);
+            size = this.rect.h * 0.7;
         }
+        noStroke();
+        fill(OverButtonTextColor);
+        textSize(size);
+        textAlign(CENTER, CENTER);
+        text(this.number, this.rect.center().x, this.rect.center().y + size * 0.1);
     }
 }
 
 class Ball {
     constructor() {
-        this.ix = width - 100;
+        this.ix = width;
         this.iy = floor(random(MaxBallHeight, MinBallHeight));
         this.rect = Rectangle.FromPosition(this.ix, this.iy, BallDiameter);
         this.acc = {
             x: 0,
             y: 0,
         };
+        this.gravity = 0;
         this.canThrow = true;
         this.thrown = false;
     }
@@ -142,10 +143,10 @@ class Ball {
             this.rect.x += this.acc.x * (deltaTime / 1000);
             this.rect.y += this.acc.y * (deltaTime / 1000);
 
-            this.acc.y += BallGravityIncrementor * (deltaTime / 1000);
+            this.acc.y += this.gravity * (deltaTime / 1000);
 
             if (this.rect.bottom() > GroundHeight) {
-                this.acc.y *= -1;
+                this.acc.y *= -0.7;
                 // to prevent error
                 this.rect.y = GroundHeight - 2 - this.rect.w;
             }
@@ -155,15 +156,23 @@ class Ball {
             this.canThrow = true;
             this.thrown = false;
         }
+
+        this.rect.x = floor(this.rect.x);
+        this.rect.y = floor(this.rect.y);
     }
 
     throw() {
-        this.acc.x = floor(random(MinBallSpeed, MaxBallSpeed));
-        this.acc.y = floor(random(MinBallGravity, MaxBallGravity));
+        let angle = radians(random(MinBallAngle, MaxBallAngle));
+        this.acc = p5.Vector.fromAngle(angle);
+        this.acc.x *= floor(random(MinBallSpeed, MaxBallSpeed));
+        this.gravity = BallGravityIncrementor;
         this.rect.x = this.ix;
-        this.rect.y = this.iy;
+        this.rect.y = floor(random(MaxBallHeight, MinBallHeight));
         this.canThrow = false;
         this.thrown = true;
+
+        this.acc.x = floor(this.acc.x);
+        this.acc.y = floor(this.acc.y);
     }
 }
 
@@ -188,7 +197,6 @@ class Game {
                 new TeamButton(x, y, { color: Teams[i] }, () => {
                     if (!this.team) {
                         this.team = Teams[i];
-                        console.log("Team: ", this.team);
                     }
                 })
             );
@@ -205,7 +213,6 @@ class Game {
                 new OverButton(x, y, n, () => {
                     if (!this.overCount) {
                         this.overCount = n;
-                        console.log("Overs: ", this.overCount);
                     }
                 })
             );
@@ -239,11 +246,31 @@ class Game {
         strokeWeight(3);
         line(0, GroundHeight, width, GroundHeight);
 
-        this.ball.draw();
-
         if (!this.paused) {
             this.ball.update();
         }
+        this.ball.draw();
+
+        if (DEBUG) {
+            this.debugHUD();
+        }
+    }
+
+    debugHUD() {
+        let sy = 30;
+        let sx = 30;
+        let spacing = 17;
+        noStroke();
+        fill(0);
+        textAlign(LEFT);
+        textSize(spacing * 0.8);
+        textFont("Monaco");
+        text("Ball X: " + this.ball.rect.center().x, sx, sy);
+        text("Ball Y: " + this.ball.rect.center().y, sx, sy + spacing);
+        text("Ball Acc X: " + this.ball.acc.x, sx, sy + spacing * 2);
+        text("Ball Acc Y: " + this.ball.acc.y, sx, sy + spacing * 3);
+        text("Overs: " + this.overCount, sx, sy + spacing * 4);
+        text("Ball count: " + this.ballCount, sx, sy + spacing * 5);
     }
 
     choose() {
@@ -270,13 +297,13 @@ class Game {
         if (this.team && this.overCount) {
             this.chose = true;
             this.ballCount = this.overCount * BallsPerOver;
-            console.log("Balls: ", this.ballCount);
         }
     }
 
     onMousePress() {
         if (this.chose && this.ball.canThrow) {
             this.ball.throw();
+            this.ballCount -= 1;
         }
     }
 
@@ -349,7 +376,7 @@ class Game {
             if (DEBUG) {
                 noStroke();
                 fill(0);
-                textAlign(LEFT);
+                textAlign(LEFT, BOTTOM);
                 textFont("Arial");
                 textSize(16);
                 text(floor(frameRate()), 0, 15);
@@ -379,7 +406,7 @@ class Game {
             // this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, 0, 0.4);
             // }
 
-            // textStyle(NORMAL);
+            // (NORMAL);
             // noStroke();
             // fill(color(config.settings.textColor));
             // textFont(config.preGameScreen.fontFamily);
