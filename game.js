@@ -26,20 +26,6 @@ const OverButtonStrokeColor = 0;
 
 const BallsPerOver = 6;
 
-const GroundLineColor = 255;
-
-const BallDiameter = 20;
-const MinBallAngle = 130;
-const MaxBallAngle = 200;
-const BallGravityIncrementor = 600;
-const MinBallSpeed = 700;
-const MaxBallSpeed = 450;
-
-let GroundHeight;
-let MinBallHeight;
-let MaxBallHeight;
-let PlayerPositionX;
-
 function init() {
     GroundHeight = height - height / 7;
     MinBallHeight = GroundHeight * 0.6;
@@ -120,59 +106,19 @@ class OverButton extends TeamButton {
 
 class Ball {
     constructor() {
-        this.ix = width;
-        this.iy = floor(random(MaxBallHeight, MinBallHeight));
-        this.rect = Rectangle.FromPosition(this.ix, this.iy, BallDiameter);
-        this.acc = {
-            x: 0,
-            y: 0,
-        };
-        this.gravity = 0;
-        this.canThrow = true;
-        this.thrown = false;
-    }
 
-    draw() {
-        fill(255, 255, 0);
-        circle(this.rect.center().x, this.rect.center().y, this.rect.w);
-        this.rect.debug();
     }
 
     update() {
-        if (this.thrown) {
-            this.rect.x += this.acc.x * (deltaTime / 1000);
-            this.rect.y += this.acc.y * (deltaTime / 1000);
 
-            this.acc.y += this.gravity * (deltaTime / 1000);
+    }
 
-            if (this.rect.bottom() > GroundHeight) {
-                this.acc.y *= -0.7;
-                // to prevent error
-                this.rect.y = GroundHeight - 2 - this.rect.w;
-            }
-        }
+    draw() {
 
-        if (this.rect.right() < 0) {
-            this.canThrow = true;
-            this.thrown = false;
-        }
-
-        this.rect.x = floor(this.rect.x);
-        this.rect.y = floor(this.rect.y);
     }
 
     throw() {
-        let angle = radians(random(MinBallAngle, MaxBallAngle));
-        this.acc = p5.Vector.fromAngle(angle);
-        this.acc.x *= floor(random(MinBallSpeed, MaxBallSpeed));
-        this.gravity = BallGravityIncrementor;
-        this.rect.x = this.ix;
-        this.rect.y = floor(random(MaxBallHeight, MinBallHeight));
-        this.canThrow = false;
-        this.thrown = true;
 
-        this.acc.x = floor(this.acc.x);
-        this.acc.y = floor(this.acc.y);
     }
 }
 
@@ -235,17 +181,6 @@ class Game {
     }
 
     updateGame() {
-        if (DEBUG) {
-            fill(255, 0, 0);
-            rect(width - 10, MinBallHeight - 5, 10, 10);
-            rect(width - 10, MaxBallHeight - 5, 10, 10);
-            rect(PlayerPositionX, GroundHeight - 30, 10, 30);
-        }
-
-        stroke(GroundLineColor);
-        strokeWeight(3);
-        line(0, GroundHeight, width, GroundHeight);
-
         if (!this.paused) {
             this.ball.update();
         }
@@ -265,12 +200,6 @@ class Game {
         textAlign(LEFT);
         textSize(spacing * 0.8);
         textFont("Monaco");
-        text("Ball X: " + this.ball.rect.center().x, sx, sy);
-        text("Ball Y: " + this.ball.rect.center().y, sx, sy + spacing);
-        text("Ball Acc X: " + this.ball.acc.x, sx, sy + spacing * 2);
-        text("Ball Acc Y: " + this.ball.acc.y, sx, sy + spacing * 3);
-        text("Overs: " + this.overCount, sx, sy + spacing * 4);
-        text("Ball count: " + this.ballCount, sx, sy + spacing * 5);
     }
 
     choose() {
