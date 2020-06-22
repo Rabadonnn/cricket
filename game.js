@@ -26,11 +26,26 @@ const OverButtonStrokeColor = 0;
 
 const BallsPerOver = 6;
 
+let BallTarget;
+let BallTargetSize;
+let BallMinX;
+let BallMaxX;
+const BallSize = 100;
+const MinBallGravity = -0.4;
+const MaxBallGravity = 0;
+
 function init() {
     GroundHeight = height - height / 7;
     MinBallHeight = GroundHeight * 0.6;
     MaxBallHeight = GroundHeight * 0.4;
     PlayerPositionX = width * 0.2;
+
+    let spawnArea = 150;
+    BallMinX = width / 2 - spawnArea / 2;
+    BallMaxX = width / 2 + spawnArea / 2;
+
+    BallTarget = createVector(width / 2, height * 0.6);
+    BallTargetSize = height / 5;
 }
 
 class TeamButton {
@@ -106,19 +121,55 @@ class OverButton extends TeamButton {
 
 class Ball {
     constructor() {
-
+        this.img = window.images.cricketBall;
+        this.pos = createVector(width / 2, height, 1);
+        this.vel = createVector();
+        this.scale = createVector(1, 1);
+        this.rotation = 0;
+        this.thrown = false;
+        this.gravity = 0;
     }
 
     update() {
+        this.pos.add(this.vel);
+        this.vel.y -= this.gravity;
 
+        this.drawX = this.pos.x / this.pos.z;
+        this.drawY = this.pos.y / this.pos.z;
+        this.drawScaleX = this.scale.x / this.pos.z;
+        this.drawScaleY = this.scale.y / this.pos.z;
+
+        if (this.pos.z > 4) {
+            this.thrown = false;
+        }
+
+        if (this.pos.y > 1500) {
+            this.vel.y *= -1;
+            this.vel.y *= 0.5;
+            this.pos.y = 1499;
+        }
     }
 
     draw() {
-
+        push();
+        translate(this.drawX, this.drawY);
+        scale(this.drawScaleX, this.drawScaleY);
+        rotate(this.rotation);
+        image(this.img, 0, 0, BallSize, BallSize);
+        pop();
     }
 
     throw() {
-
+        let x = floor(random(BallMinX, BallMaxX));
+        this.pos = createVector(x, height, 1);
+        this.gravity = random(MinBallGravity, MaxBallGravity);
+        // let velz = random(MinBallAccZ, MaxBallAccZ);
+        let velx = 10;
+        let vely = 0.01;
+        let velz = 0.02;
+        this.vel = createVector(velx, vely, velz);
+        this.rotation = random(0, TWO_PI);
+        this.thrown = true;
     }
 }
 
@@ -134,7 +185,7 @@ class Game {
         this.overButtons = [];
 
         let step = ButtonSize + ButtonOffset;
-        let sx = width / 2 - (Teams.length / 2) * step;
+        let sx = width / 2 - (Teams.length / 2) * step + ButtonOffset / 2;
         let y = height / 3;
 
         for (let i = 0; i < Teams.length; i++) {
@@ -148,7 +199,7 @@ class Game {
             );
         }
 
-        sx = width / 2 - (3 / 2) * step;
+        sx = width / 2 - (3 / 2) * step + ButtonOffset / 2;
         for (let i = 0; i < 3; i++) {
             let x = sx + step * i;
             let n;
@@ -182,9 +233,13 @@ class Game {
 
     updateGame() {
         if (!this.paused) {
-            this.ball.update();
+            if (this.ball.thrown) {
+                this.ball.update();
+            }
         }
-        this.ball.draw();
+        if (this.ball.thrown) {
+            this.ball.draw();
+        }
 
         if (DEBUG) {
             this.debugHUD();
@@ -192,14 +247,33 @@ class Game {
     }
 
     debugHUD() {
-        let sy = 30;
-        let sx = 30;
-        let spacing = 17;
+        fill(255, 0, 0);
         noStroke();
+        rect(BallMinX - 5, height - 10, 10, 10);
+        rect(BallMaxX - 5, height - 10, 10, 10);
+
+        let sy = 50;
+        let sx = 50;
+        let spacing = 17;
         fill(0);
         textAlign(LEFT);
         textSize(spacing * 0.8);
         textFont("Monaco");
+        text(`ball pos: x:${this.ball.pos.x} y:${this.ball.pos.y} z:${this.ball.pos.z}`, sx, sy);
+        text(`ball acc: x:${this.ball.vel.x} y:${this.ball.vel.y} z:${this.ball.vel.z}`, sx, sy + spacing * 2);
+        text(`ball draw coords: x:${this.ball.drawX} y:${this.ball.drawY}`, sx, sy + spacing * 4);
+        text(`ball scale: x:${this.ball.drawScaleX} y:${this.ball.drawScaleY}`, sx, sy + spacing * 6);
+        text(`ball graivty: ${this.ball.gravity}`, sx, sy + spacing * 8);
+        text(`ball rotation: ${this.ball.rotation}`, sx, sy + spacing * 9);
+
+
+        noFill();
+        stroke(255, 0, 0);
+        strokeWeight(1);
+        circle(BallTarget.x, BallTarget.y, BallTargetSize);
+        noStroke();
+        fill(255, 0, 0);
+        circle(BallTarget.x, BallTarget.y, 10);
     }
 
     choose() {
@@ -230,7 +304,7 @@ class Game {
     }
 
     onMousePress() {
-        if (this.chose && this.ball.canThrow) {
+        if (this.chose) {
             this.ball.throw();
             this.ballCount -= 1;
         }
@@ -258,7 +332,7 @@ class Game {
         this.scoreFontSize = height / 20;
         this.delayBeforeExit = 1.2;
 
-        // Don'touch these
+        // Don't touch these
         this.started = false;
         this.c_instructionsFontSize = 0;
         this.c_scoreFontSize = 0;
@@ -373,8 +447,12 @@ class Game {
 // Helper functions
 
 function playSound(sound) {
-    if (window.soundEnabled) {
-        sound.play();
+    try {
+        if (window.soundEnabled) {
+            sound.play();
+        }
+    } catch (err) {
+        console.log("error playing sound");
     }
 }
 

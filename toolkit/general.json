@@ -115,6 +115,11 @@
                     "header": "Instructions Text 3"
                 },
                 {
+                    "key": "stadium",
+                    "header": "Stadium image",
+                    "type": "image"
+                },
+                {
                     "key": "teams",
                     "type": "array",
                     "header": "Teams array",
@@ -135,6 +140,11 @@
                     "key": "textColor",
                     "header": "In Game Text Color",
                     "type": "color"
+                },
+                {
+                    "key": "cricketBall",
+                    "header": "Cricket ball",
+                    "type": "image"
                 },
                 {
                     "key": "tap",
@@ -285,10 +295,12 @@
             "instructions2": "Place new blocks over the old ones",
             "instructions3": "Have fun!",
             "textColor": "#000",
+            "stadium": "assets/cricket_stadium.png",
             "teams": {
                 "t1": "#0000ff",
                 "t2": "#ff0000"
             },
+            "cricketBall": "assets/cricket_ball.png",
             "theme": "assets/theme.mp3",
             "volume": "0.7",
             "tap": "assets/tap.wav",

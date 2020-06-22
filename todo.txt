@@ -1,0 +1,8 @@
+[] ball throwing
+[] stadium image implementation
+[] floating bat - white with gray details
+[] floating bat implementation
+[] player images - be white with gray details
+[] player customization - will use p5 tint() 
+[] teams / players customization
+[] game logic - team selection - player - win - lose - etc
