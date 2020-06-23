@@ -91,7 +91,8 @@ function loadImages() {
     window.images.background = loadImage(config.preGameScreen["backgroundImage"]);
     window.images.stadium = loadImage(config.settings.stadium);
     window.images.cricketBall = loadImage(config.settings.cricketBall);
-}
+    window.images.cricketBat = loadImage(config.settings.cricketBat)
+;}
 
 function loadSounds() {
     window.sounds.theme = loadSound(config.settings.theme);

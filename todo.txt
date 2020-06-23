@@ -1,7 +1,7 @@
 [*] ball throwing
 [] ball throwing calibration
 [*] stadium image implementation
-[] floating bat - white with gray details
+[*] floating bat - white with gray details
 [] floating bat implementation
 [] player images - be white with gray details
 [] player customization - will use p5 tint() 

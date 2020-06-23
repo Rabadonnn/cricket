@@ -34,6 +34,9 @@ const BallSize = 100;
 const MinBallGravity = -0.4;
 const MaxBallGravity = 0;
 
+const BatSize = 200;
+let BatPos;
+
 function init() {
     GroundHeight = height - height / 7;
     MinBallHeight = GroundHeight * 0.6;
@@ -46,6 +49,12 @@ function init() {
 
     BallTarget = createVector(width / 2, height * 0.6);
     BallTargetSize = height / 5;
+
+    stadium.init();
+
+    let bx = width / 2 + stadium.size.width * 0.25;
+    let by = (height / 2) * 1.2;
+    BatPos = createVector(bx, by);
 }
 
 class TeamButton {
@@ -133,6 +142,58 @@ const stadium = {
     },
 };
 
+class Bat {
+    constructor() {
+        this.img = window.images.cricketBat;
+        this.size = calculateAspectRatioFit(this.img.width, this.img.height, BatSize, BatSize);
+        this.pos = BatPos;
+        this.scale = 1;
+        this.rotation = 0;
+        this.pivotPoint = createVector(0, this.size.height * 0.25);
+    }
+
+    draw() {
+        push();
+        translate(this.pos.x, this.pos.y);
+        scale(this.scale);
+        rotate(this.rotation);
+        imageMode(CENTER);
+        image(this.img, 0, -this.pivotPoint.y, this.size.width, this.size.height);
+        imageMode(CORNER);
+        pop();
+
+        if (DEBUG) {
+            noStroke();
+            fill(255, 0, 255);
+            circle(this.pos.x + this.pivotPoint.x, this.pos.y + this.pivotPoint.y, 10);
+            fill(0, 255, 255);
+            circle(this.pos.x, this.pos.y, 10);
+        }
+    }
+
+    update() {
+        if (this.rotation != 0) {
+            this.rotation = lerp(this.rotation, 0, 0.1);
+        }
+    }
+
+    onMousePress() {
+        shifty.tween({
+            from: {
+                rot: this.rotation,
+            },
+            to: {
+                rot: -PI / 2,
+            },
+            duration: 200,
+            easing: "easeInQuad",
+            step: (state) => {
+                this.rotation = state.rot;
+            },
+        });
+    }
+}
+
 class Ball {
     constructor() {
         this.img = window.images.cricketBall;
@@ -155,7 +216,7 @@ class Ball {
         this.drawScaleX = this.scale.x / this.pos.z;
         this.drawScaleY = this.scale.y / this.pos.z;
 
-        this.rotation += this.rotDir * this.rotSpeed * deltaTime / 1000;
+        this.rotation += (this.rotDir * this.rotSpeed * deltaTime) / 1000;
 
         if (this.pos.z > 4) {
             this.thrown = false;
@@ -194,7 +255,9 @@ class Ball {
         this.rotation = random(0, TWO_PI);
         this.thrown = true;
 
-        this.rotDir = 1 ? this.pos.x < width / 2 : -1;
+        this.rotDir = this.pos.x < width / 2 ? 1 : -1;
+        let d = dist(this.pos.x, this.pos.y, width / 2, height);
+        this.rotSpeed = map(d, 0, 100, 0, PI);
     }
 }
 
@@ -203,8 +266,6 @@ class Game {
         this.defaults();
 
         init();
-
-        stadium.init();
 
         this.chose = false;
 
@@ -246,6 +307,7 @@ class Game {
         this.overCount = undefined;
         this.ballCount = undefined;
 
+        this.bat = new Bat();
         this.ball = new Ball();
     }
 
@@ -264,7 +326,9 @@ class Game {
             if (this.ball.thrown) {
                 this.ball.update();
             }
+            this.bat.update();
         }
+        this.bat.draw();
         if (this.ball.thrown) {
             this.ball.draw();
         }
@@ -293,6 +357,8 @@ class Game {
         text(`ball scale: x:${this.ball.drawScaleX} y:${this.ball.drawScaleY}`, sx, sy + spacing * 6);
         text(`ball graivty: ${this.ball.gravity}`, sx, sy + spacing * 8);
         text(`ball rotation: ${this.ball.rotation}`, sx, sy + spacing * 9);
+        text(`ball rotation speed: ${this.ball.rotSpeed}`, sx, sy + spacing * 10);
+        text(`ball rotation dir: ${this.ball.rotDir}`, sx, sy + spacing * 11);
 
         noFill();
         stroke(255, 0, 0);
@@ -333,6 +399,7 @@ class Game {
     onMousePress() {
         if (this.chose) {
             this.ball.throw();
+            this.bat.onMousePress();
             this.ballCount -= 1;
         }
     }

@@ -14,7 +14,7 @@
                 {
                     "key": "titleTextSize",
                     "header": "Title text size",
-                   "type": "range",
+                    "type": "range",
                     "options": {
                         "minValue": 20,
                         "maxValue": 40,
@@ -50,7 +50,7 @@
                         "maxValue": 400,
                         "stepSize": "1"
                     }
-                }, 
+                },
                 {
                     "key": "cardColor",
                     "header": "Card Color",
@@ -147,6 +147,11 @@
                     "type": "image"
                 },
                 {
+                    "key": "cricketBat",
+                    "header": "Cricket bat",
+                    "type": "image"
+                },
+                {
                     "key": "tap",
                     "header": "Tap sound effect",
                     "type": "sound"
@@ -179,7 +184,7 @@
             "header": "Post Game Screen",
             "disabled": false,
             "fields": [
-                 {
+                {
                     "key": "scoreText",
                     "header": "Text before score",
                     "type": "text"
@@ -301,6 +306,7 @@
                 "t2": "#ff0000"
             },
             "cricketBall": "assets/cricket_ball.png",
+            "cricketBat": "assets/cricket_bat.png",
             "theme": "assets/theme.mp3",
             "volume": "0.7",
             "tap": "assets/tap.wav",
@@ -327,4 +333,3 @@
         }
     }
 }
-
