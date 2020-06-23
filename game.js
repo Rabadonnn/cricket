@@ -119,6 +119,20 @@ class OverButton extends TeamButton {
     }
 }
 
+const stadium = {
+    init: () => {
+        stadium.x = width / 2;
+        stadium.y = height / 2;
+        stadium.img = window.images.stadium;
+        stadium.size = calculateAspectRatioFit(stadium.img.width, stadium.img.height, width, height);
+    },
+    draw: () => {
+        imageMode(CENTER);
+        image(stadium.img, stadium.x, stadium.y, stadium.size.width, stadium.size.height);
+        imageMode(CORNER);
+    },
+};
+
 class Ball {
     constructor() {
         this.img = window.images.cricketBall;
@@ -128,6 +142,8 @@ class Ball {
         this.rotation = 0;
         this.thrown = false;
         this.gravity = 0;
+        this.rotDir = 0;
+        this.rotSpeed = PI;
     }
 
     update() {
@@ -138,6 +154,8 @@ class Ball {
         this.drawY = this.pos.y / this.pos.z;
         this.drawScaleX = this.scale.x / this.pos.z;
         this.drawScaleY = this.scale.y / this.pos.z;
+
+        this.rotation += this.rotDir * this.rotSpeed * deltaTime / 1000;
 
         if (this.pos.z > 4) {
             this.thrown = false;
@@ -155,21 +173,28 @@ class Ball {
         translate(this.drawX, this.drawY);
         scale(this.drawScaleX, this.drawScaleY);
         rotate(this.rotation);
+        imageMode(CENTER);
         image(this.img, 0, 0, BallSize, BallSize);
+        imageMode(CORNER);
         pop();
     }
 
     throw() {
-        let x = floor(random(BallMinX, BallMaxX));
+        // let x = floor(random(BallMinX, BallMaxX));
+        let x = width / 2;
         this.pos = createVector(x, height, 1);
         this.gravity = random(MinBallGravity, MaxBallGravity);
         // let velz = random(MinBallAccZ, MaxBallAccZ);
         let velx = 10;
         let vely = 0.01;
-        let velz = 0.02;
+        let velz = 0.0175;
         this.vel = createVector(velx, vely, velz);
+        let multiplier = random(1, 2);
+        this.vel.mult(multiplier);
         this.rotation = random(0, TWO_PI);
         this.thrown = true;
+
+        this.rotDir = 1 ? this.pos.x < width / 2 : -1;
     }
 }
 
@@ -178,6 +203,8 @@ class Game {
         this.defaults();
 
         init();
+
+        stadium.init();
 
         this.chose = false;
 
@@ -223,6 +250,7 @@ class Game {
     }
 
     permaUpdate() {
+        stadium.draw();
         // choose team state;
         if (!this.chose) {
             this.choose();
@@ -265,7 +293,6 @@ class Game {
         text(`ball scale: x:${this.ball.drawScaleX} y:${this.ball.drawScaleY}`, sx, sy + spacing * 6);
         text(`ball graivty: ${this.ball.gravity}`, sx, sy + spacing * 8);
         text(`ball rotation: ${this.ball.rotation}`, sx, sy + spacing * 9);
-
 
         noFill();
         stroke(255, 0, 0);
