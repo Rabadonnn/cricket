@@ -30,12 +30,16 @@ let BallTarget;
 let BallTargetSize;
 let BallMinX;
 let BallMaxX;
-const BallSize = 100;
-const MinBallGravity = -0.4;
+const BallSize = 200;
+const MinBallGravity = -0.3;
 const MaxBallGravity = 0;
+const BallThrowCooldown = 3;
+const MinBallY = 1000;
 
 const BatSize = 200;
 let BatPos;
+let MaxBatAngle;
+let BatAngle;
 
 function init() {
     GroundHeight = height - height / 7;
@@ -55,6 +59,8 @@ function init() {
     let bx = width / 2 + stadium.size.width * 0.25;
     let by = (height / 2) * 1.2;
     BatPos = createVector(bx, by);
+    MaxBatAngle = -PI * 0.6;
+    BatAngle = -PI / 10;
 }
 
 class TeamButton {
@@ -148,8 +154,12 @@ class Bat {
         this.size = calculateAspectRatioFit(this.img.width, this.img.height, BatSize, BatSize);
         this.pos = BatPos;
         this.scale = 1;
-        this.rotation = 0;
+        this.rotation = BatAngle;
         this.pivotPoint = createVector(0, this.size.height * 0.25);
+    }
+
+    get canHit() {
+        return this.rotation < MaxBatAngle / 3;
     }
 
     draw() {
@@ -164,7 +174,7 @@ class Bat {
 
         if (DEBUG) {
             noStroke();
-            fill(255, 0, 255);
+            fill(255, 0, 255)
             circle(this.pos.x + this.pivotPoint.x, this.pos.y + this.pivotPoint.y, 10);
             fill(0, 255, 255);
             circle(this.pos.x, this.pos.y, 10);
@@ -172,25 +182,27 @@ class Bat {
     }
 
     update() {
-        if (this.rotation != 0) {
-            this.rotation = lerp(this.rotation, 0, 0.1);
+        if (this.rotation < BatAngle - 0.001) {
+            this.rotation = lerp(this.rotation, BatAngle, 0.15);
         }
     }
 
     onMousePress() {
-        shifty.tween({
-            from: {
-                rot: this.rotation,
-            },
-            to: {
-                rot: -PI / 2,
-            },
-            duration: 200,
-            easing: "easeInQuad",
-            step: (state) => {
-                this.rotation = state.rot;
-            },
-        });
+        if (this.rotation > BatAngle - 0.001) {
+            shifty.tween({
+                from: {
+                    rot: this.rotation,
+                },
+                to: {
+                    rot: MaxBatAngle,
+                },
+                duration: 70,
+                easing: "easeOutQuad",
+                step: (state) => {
+                    this.rotation = state.rot;
+                },
+            });
+        }
     }
 }
 
@@ -199,9 +211,11 @@ class Ball {
         this.img = window.images.cricketBall;
         this.pos = createVector(width / 2, height, 1);
         this.vel = createVector();
-        this.scale = createVector(1, 1);
+
+        this.perspective = width * 0.8;
+        this.projectionCenter = createVector(width / 2, height / 2);
+
         this.rotation = 0;
-        this.thrown = false;
         this.gravity = 0;
         this.rotDir = 0;
         this.rotSpeed = PI;
@@ -209,49 +223,57 @@ class Ball {
 
     update() {
         this.pos.add(this.vel);
-        this.vel.y -= this.gravity;
+        // this.vel.y -= this.gravity;
 
-        this.drawX = this.pos.x / this.pos.z;
-        this.drawY = this.pos.y / this.pos.z;
-        this.drawScaleX = this.scale.x / this.pos.z;
-        this.drawScaleY = this.scale.y / this.pos.z;
+        this.scale = (this.perspective / (this.perspective + this.pos.z)) * 1.1;
+
+        this.drawX = this.pos.x * this.scale + this.projectionCenter.x;
+        this.drawY = this.pos.y * this.scale + this.projectionCenter.y;
 
         this.rotation += (this.rotDir * this.rotSpeed * deltaTime) / 1000;
 
-        if (this.pos.z > 4) {
-            this.thrown = false;
-        }
-
-        if (this.pos.y > 1500) {
+        if (this.pos.y > MinBallY) {
             this.vel.y *= -1;
-            this.vel.y *= 0.5;
-            this.pos.y = 1499;
+            this.vel.y *= 0.8;
+            this.pos.y = MinBallY - 10;
+        }
+    }
+
+    get canBeHit() {
+        let d = dist(this.drawX, this.drawY, BallTarget.x, BallTarget.y) < BallTargetSize;
+        let p = this.pos.z > 5000;
+        return d && p;
+    }
+
+    checkBat(bat) {
+        if (this.canBeHit && bat.canHit) {
+            this.vel.z *= -2;
+            this.vel.y *= -1;
+            this.vel.x = random(-12, -8);
+            this.hit = true;
         }
     }
 
     draw() {
-        push();
-        translate(this.drawX, this.drawY);
-        scale(this.drawScaleX, this.drawScaleY);
-        rotate(this.rotation);
-        imageMode(CENTER);
-        image(this.img, 0, 0, BallSize, BallSize);
-        imageMode(CORNER);
-        pop();
+        if (this.pos.z > 0) {
+            push();
+            translate(this.drawX, this.drawY);
+            scale(this.scale);
+            rotate(this.rotation);
+            imageMode(CENTER);
+            image(this.img, 0, 0, BallSize, BallSize);
+            imageMode(CORNER);
+            pop();
+        }
     }
 
     throw() {
-        // let x = floor(random(BallMinX, BallMaxX));
-        let x = width / 2;
-        this.pos = createVector(x, height, 1);
         this.gravity = random(MinBallGravity, MaxBallGravity);
-        // let velz = random(MinBallAccZ, MaxBallAccZ);
-        let velx = 10;
-        let vely = 0.01;
-        let velz = 0.0175;
-        this.vel = createVector(velx, vely, velz);
-        let multiplier = random(1, 2);
-        this.vel.mult(multiplier);
+
+        let x = floor(random(-100, 100));
+        this.pos = createVector(x, height / 2);
+        this.vel = createVector(0, 0, 70);
+
         this.rotation = random(0, TWO_PI);
         this.thrown = true;
 
@@ -261,10 +283,20 @@ class Ball {
     }
 }
 
+class ScoreBoard {
+    constructor(game) {
+        this.game = game;
+    }
+
+    draw() {
+
+    }
+}
+
 class Game {
     constructor() {
         this.defaults();
-
+        
         init();
 
         this.chose = false;
@@ -309,6 +341,7 @@ class Game {
 
         this.bat = new Bat();
         this.ball = new Ball();
+        this.ballcd = BallThrowCooldown;
     }
 
     permaUpdate() {
@@ -327,10 +360,17 @@ class Game {
                 this.ball.update();
             }
             this.bat.update();
+            this.ball.checkBat(this.bat);
         }
         this.bat.draw();
         if (this.ball.thrown) {
             this.ball.draw();
+        }
+
+        this.ballcd -= deltaTime / 1000;
+        if (this.ballcd < 0) {
+            this.ballcd = BallThrowCooldown;
+            this.ball.throw();
         }
 
         if (DEBUG) {
@@ -354,11 +394,14 @@ class Game {
         text(`ball pos: x:${this.ball.pos.x} y:${this.ball.pos.y} z:${this.ball.pos.z}`, sx, sy);
         text(`ball acc: x:${this.ball.vel.x} y:${this.ball.vel.y} z:${this.ball.vel.z}`, sx, sy + spacing * 2);
         text(`ball draw coords: x:${this.ball.drawX} y:${this.ball.drawY}`, sx, sy + spacing * 4);
-        text(`ball scale: x:${this.ball.drawScaleX} y:${this.ball.drawScaleY}`, sx, sy + spacing * 6);
+        text(`ball scale: ${this.ball.scale}`, sx, sy + spacing * 6);
         text(`ball graivty: ${this.ball.gravity}`, sx, sy + spacing * 8);
         text(`ball rotation: ${this.ball.rotation}`, sx, sy + spacing * 9);
         text(`ball rotation speed: ${this.ball.rotSpeed}`, sx, sy + spacing * 10);
         text(`ball rotation dir: ${this.ball.rotDir}`, sx, sy + spacing * 11);
+        text(`bat rotation: ${this.bat.rotation}`, sx, sy + spacing * 13);
+        text(`bat canHit: ${this.bat.canHit}`, sx, sy + spacing * 14);
+        text(`ball canBeHit: ${this.ball.canBeHit}`, sx, sy + spacing * 15);
 
         noFill();
         stroke(255, 0, 0);
@@ -398,9 +441,7 @@ class Game {
 
     onMousePress() {
         if (this.chose) {
-            this.ball.throw();
             this.bat.onMousePress();
-            this.ballCount -= 1;
         }
     }
 

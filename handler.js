@@ -7,12 +7,6 @@ let $ = require("jquery");
 
 // check if it is a mobile device
 
-class Welcome extends React.Component {
-    render() {
-        return <h1>Hello, {this.props.name}</h1>;
-    }
-}
-
 window.mobile = function () {
     if (
         /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(
@@ -72,6 +66,10 @@ window.restartGame = () => {
         }
     } catch (err) {}
 
+    window.onerror = function (message, source, lineno, colno, error) {
+        console.log(message, source, lineno);
+    };
+
     window.setScreen("gameScreen");
 };
 
@@ -91,8 +89,8 @@ function loadImages() {
     window.images.background = loadImage(config.preGameScreen["backgroundImage"]);
     window.images.stadium = loadImage(config.settings.stadium);
     window.images.cricketBall = loadImage(config.settings.cricketBall);
-    window.images.cricketBat = loadImage(config.settings.cricketBat)
-;}
+    window.images.cricketBat = loadImage(config.settings.cricketBat);
+}
 
 function loadSounds() {
     window.sounds.theme = loadSound(config.settings.theme);
@@ -103,6 +101,8 @@ function loadSounds() {
 window.preload = function () {
     loadImages();
     loadSounds();
+
+    loadGoogleFont();
 };
 
 // load font for p5.js
@@ -114,7 +114,6 @@ function loadGoogleFont() {
 }
 
 window.setup = function () {
-    loadGoogleFont();
     createCanvas(window.innerWidth, window.innerHeight);
     game = new Game();
 };
