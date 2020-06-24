@@ -30,7 +30,7 @@ let BallTarget;
 let BallTargetSize;
 let BallMinX;
 let BallMaxX;
-const BallSize = 200;
+const BallSize = 100;
 const MinBallGravity = -0.3;
 const MaxBallGravity = 0;
 const BallThrowCooldown = 3;
@@ -56,7 +56,7 @@ function init() {
 
     stadium.init();
 
-    let bx = width / 2 + stadium.size.width * 0.25;
+    let bx = width / 2 + stadium.size.width * 0.2;
     let by = (height / 2) * 1.2;
     BatPos = createVector(bx, by);
     MaxBatAngle = -PI * 0.6;
@@ -174,7 +174,7 @@ class Bat {
 
         if (DEBUG) {
             noStroke();
-            fill(255, 0, 255)
+            fill(255, 0, 255);
             circle(this.pos.x + this.pivotPoint.x, this.pos.y + this.pivotPoint.y, 10);
             fill(0, 255, 255);
             circle(this.pos.x, this.pos.y, 10);
@@ -183,7 +183,7 @@ class Bat {
 
     update() {
         if (this.rotation < BatAngle - 0.001) {
-            this.rotation = lerp(this.rotation, BatAngle, 0.15);
+            this.rotation = lerp(this.rotation, BatAngle, 0.2);
         }
     }
 
@@ -196,7 +196,7 @@ class Bat {
                 to: {
                     rot: MaxBatAngle,
                 },
-                duration: 70,
+                duration: 50,
                 easing: "easeOutQuad",
                 step: (state) => {
                     this.rotation = state.rot;
@@ -208,79 +208,42 @@ class Bat {
 
 class Ball {
     constructor() {
+        this.canvas = createGraphics(stadium.size.width, stadium.size.height, WEBGL);
         this.img = window.images.cricketBall;
-        this.pos = createVector(width / 2, height, 1);
-        this.vel = createVector();
 
-        this.perspective = width * 0.8;
-        this.projectionCenter = createVector(width / 2, height / 2);
+        this.setDefaults();
+    }
 
+    setDefaults() {
+        this.pos = createVector(0, height / 2, 0);
+        this.vel = createVector(0, 0, 0);
+        this.size = BallSize;
         this.rotation = 0;
-        this.gravity = 0;
-        this.rotDir = 0;
-        this.rotSpeed = PI;
+        this.scale = 1;
     }
 
     update() {
         this.pos.add(this.vel);
-        // this.vel.y -= this.gravity;
-
-        this.scale = (this.perspective / (this.perspective + this.pos.z)) * 1.1;
-
-        this.drawX = this.pos.x * this.scale + this.projectionCenter.x;
-        this.drawY = this.pos.y * this.scale + this.projectionCenter.y;
-
-        this.rotation += (this.rotDir * this.rotSpeed * deltaTime) / 1000;
-
-        if (this.pos.y > MinBallY) {
-            this.vel.y *= -1;
-            this.vel.y *= 0.8;
-            this.pos.y = MinBallY - 10;
-        }
-    }
-
-    get canBeHit() {
-        let d = dist(this.drawX, this.drawY, BallTarget.x, BallTarget.y) < BallTargetSize;
-        let p = this.pos.z > 5000;
-        return d && p;
-    }
-
-    checkBat(bat) {
-        if (this.canBeHit && bat.canHit) {
-            this.vel.z *= -2;
-            this.vel.y *= -1;
-            this.vel.x = random(-12, -8);
-            this.hit = true;
-        }
     }
 
     draw() {
-        if (this.pos.z > 0) {
-            push();
-            translate(this.drawX, this.drawY);
-            scale(this.scale);
-            rotate(this.rotation);
-            imageMode(CENTER);
-            image(this.img, 0, 0, BallSize, BallSize);
-            imageMode(CORNER);
-            pop();
-        }
+        this.canvas.clear();
+        this.canvas.push();
+        this.canvas.translate(this.pos.x, this.pos.y, this.pos.z);
+        this.canvas.imageMode(CENTER);
+        this.canvas.image(this.img, 0, 0, this.size, this.size);
+        this.canvas.imageMode(CORNER);
+        this.canvas.pop();
+
+        image(this.canvas, width / 2 - stadium.size.width / 2, 0);
     }
 
     throw() {
-        this.gravity = random(MinBallGravity, MaxBallGravity);
-
-        let x = floor(random(-100, 100));
-        this.pos = createVector(x, height / 2);
-        this.vel = createVector(0, 0, 70);
-
-        this.rotation = random(0, TWO_PI);
-        this.thrown = true;
-
-        this.rotDir = this.pos.x < width / 2 ? 1 : -1;
-        let d = dist(this.pos.x, this.pos.y, width / 2, height);
-        this.rotSpeed = map(d, 0, 100, 0, PI);
+        this.setDefaults();
+        this.vel = createVector(0, 0, -20);
     }
+
+    checkBat(bat) {}
 }
 
 class ScoreBoard {
@@ -288,15 +251,13 @@ class ScoreBoard {
         this.game = game;
     }
 
-    draw() {
-
-    }
+    draw() {}
 }
 
 class Game {
     constructor() {
         this.defaults();
-        
+
         init();
 
         this.chose = false;
@@ -356,16 +317,13 @@ class Game {
 
     updateGame() {
         if (!this.paused) {
-            if (this.ball.thrown) {
-                this.ball.update();
-            }
+            this.ball.update();
             this.bat.update();
             this.ball.checkBat(this.bat);
         }
+
         this.bat.draw();
-        if (this.ball.thrown) {
-            this.ball.draw();
-        }
+        this.ball.draw();
 
         this.ballcd -= deltaTime / 1000;
         if (this.ballcd < 0) {
