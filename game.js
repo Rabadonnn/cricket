@@ -254,6 +254,34 @@ class ScoreBoard {
     draw() {}
 }
 
+class PauseButton extends TeamButton {
+    constructor(onPress) {
+        let size = 60;
+        let x = width - size;
+        let y = size;
+        super(x, y, null, onPress);
+
+        this.rect = Rectangle.FromPosition(x, y, size);
+        this.hoverRect = Rectangle.FromPosition(x, y, size * 1.1);
+
+        this.size = size;
+    }
+
+    draw() {
+        this.update();
+
+        strokeWeight(5);
+        stroke(0);
+        fill(255);
+        if (this.hover) {
+            this.hoverRect.draw();
+        } else {
+            this.rect.draw();
+        }
+
+    }
+}
+
 class Game {
     constructor() {
         this.defaults();
@@ -264,6 +292,9 @@ class Game {
 
         this.teamButtons = [];
         this.overButtons = [];
+        this.pauseButton = new PauseButton(() => {
+            this.paused = !this.paused;
+        });
 
         let step = ButtonSize + ButtonOffset;
         let sx = width / 2 - (Teams.length / 2) * step + ButtonOffset / 2;
@@ -313,6 +344,8 @@ class Game {
         } else {
             this.updateGame();
         }
+
+        this.pauseButton.draw();
     }
 
     updateGame() {

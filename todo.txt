@@ -7,12 +7,13 @@
 [*] floating bat implementation
 
 [*] bat and ball collision
-[*] bat and ball collision response
+[] bat and ball collision response
 [] calibrate bat and ball collision response
 [] add some sort of juiciness when hitting the ball, also some visuals
     when the ball gets out of the hitting radius so you can actually lose
 
 [] player images - be white with gray details
+[] player animation - will scale and rotate every part of his body, won't need to be complicated
 [] player customization - will use p5 tint() 
 
 [] teams / players customization
