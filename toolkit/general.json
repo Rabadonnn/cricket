@@ -120,6 +120,33 @@
                     "type": "image"
                 },
                 {
+                    "key": "player",
+                    "header": "Player",
+                    "type": "array",
+                    "fields": [
+                        {
+                            "key": "head",
+                            "type": "image",
+                            "header": "Player head image"
+                        },
+                        {
+                            "key": "body",
+                            "type": "color",
+                            "header": "Player body color"
+                        },
+                        {
+                            "key": "cap",
+                            "type": "color",
+                            "header": "Player cap color"
+                        },
+                        {
+                            "key": "leg",
+                            "type": "color",
+                            "header": "Player legs color"
+                        }
+                    ]
+                },
+                {
                     "key": "teams",
                     "type": "array",
                     "header": "Teams array",
@@ -301,6 +328,12 @@
             "instructions3": "Have fun!",
             "textColor": "#000",
             "stadium": "assets/cricket_stadium.png",
+            "player": {
+                "head": "assets/player_head.png",
+                "body": "#9DCEBA",
+                "cap": "#505750",
+                "leg": "#808080"
+            },
             "teams": {
                 "t1": "#0000ff",
                 "t2": "#ff0000"

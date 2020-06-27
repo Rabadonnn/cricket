@@ -1,6 +1,6 @@
 let config = require("visual-config-exposer").default;
 
-const DEBUG = true;
+const DEBUG = false;
 
 function getTeams() {
     let result = [];
@@ -31,12 +31,9 @@ let BallTargetSize;
 let BallMinX;
 let BallMaxX;
 const BallSize = 100;
-const MinBallGravity = -0.3;
-const MaxBallGravity = 0;
 const BallThrowCooldown = 3;
-const MinBallY = 1000;
 
-const BatSize = 200;
+const BatSize = 160;
 let BatPos;
 let MaxBatAngle;
 let BatAngle;
@@ -256,13 +253,15 @@ class ScoreBoard {
 
 class PauseButton extends TeamButton {
     constructor(onPress) {
-        let size = 60;
+        let size = 45;
         let x = width - size;
         let y = size;
         super(x, y, null, onPress);
 
         this.rect = Rectangle.FromPosition(x, y, size);
         this.hoverRect = Rectangle.FromPosition(x, y, size * 1.1);
+        this.rect.cornerRadius = 12;
+        this.hoverRect.cornerRadius = 12;
 
         this.size = size;
     }
@@ -275,10 +274,262 @@ class PauseButton extends TeamButton {
         fill(255);
         if (this.hover) {
             this.hoverRect.draw();
+            strokeWeight(8);
+            line(
+                this.hoverRect.x + this.hoverRect.w * 0.3,
+                this.hoverRect.y + this.hoverRect.h * 0.3,
+                this.hoverRect.x + this.hoverRect.w * 0.3,
+                this.hoverRect.y + this.hoverRect.h * 0.7
+            );
+            line(
+                this.hoverRect.x + this.hoverRect.w * 0.7,
+                this.hoverRect.y + this.hoverRect.h * 0.3,
+                this.hoverRect.x + this.hoverRect.w * 0.7,
+                this.hoverRect.y + this.hoverRect.h * 0.7
+            );
         } else {
             this.rect.draw();
+            strokeWeight(8);
+            line(
+                this.rect.x + this.rect.w * 0.3,
+                this.rect.y + this.rect.h * 0.3,
+                this.rect.x + this.rect.w * 0.3,
+                this.rect.y + this.rect.h * 0.7
+            );
+            line(
+                this.rect.x + this.rect.w * 0.7,
+                this.rect.y + this.rect.h * 0.3,
+                this.rect.x + this.rect.w * 0.7,
+                this.rect.y + this.rect.h * 0.7
+            );
         }
+    }
+}
 
+class BodyPart {
+    constructor(img) {
+        this.img = img;
+        this.size = createVector();
+        this.scale = createVector(1, 1);
+        this.rotation = 0;
+        this.pos = createVector(0, 0);
+        this.pivot = createVector(0, 0);
+        this.offset = createVector(0, 0);
+        this.color = color("#ffffff");
+
+        this.calculateSize();
+    }
+
+    calculateSize() {
+        this.actualSize = calculateAspectRatioFit(this.img.width, this.img.height, this.size.x, this.size.y);
+    }
+
+    draw() {
+        push();
+        translate(this.pos.x + this.offset.x + this.pivot.x, this.pos.y + this.offset.y + this.pivot.y);
+        scale(this.scale.x, this.scale.y);
+        rotate(this.rotation);
+        imageMode(CENTER);
+        tint(this.color);
+        image(this.img, -this.pivot.x, -this.pivot.y, this.actualSize.width, this.actualSize.height);
+        imageMode(CORNER);
+        pop();
+    }
+}
+
+class Player {
+    constructor() {
+        this.legImg = window.images.player.leg;
+        this.capImg = window.images.player.cap;
+        this.bodyImg = window.images.player.body;
+        this.headImg = window.images.player.head;
+
+        this.setupParts();
+        this.setupAnimations();
+    }
+
+    setupParts() {
+        let center = createVector(width / 2 + (stadium.size.width / 2) * 0.65, BatPos.y - BatSize * 0.2);
+        let mainSize = 100;
+
+        this.body = new BodyPart(this.bodyImg);
+        this.body.size = createVector(mainSize, mainSize);
+        this.body.rotation = radians(-7.7);
+        this.body.color = color(config.settings.player.body);
+        this.body.calculateSize();
+        this.body.pos = createVector(center.x, center.y + this.body.actualSize.height * 0.05);
+        center = this.body.pos;
+
+        this.head = new BodyPart(this.headImg);
+        this.head.pos = createVector(
+            center.x - this.body.actualSize.width * 0.12,
+            center.y - this.body.actualSize.height * 0.7
+        );
+        this.head.size = createVector(this.body.actualSize.width * 0.6, this.body.actualSize.width * 0.6);
+        this.head.rotation = radians(-15);
+        this.head.calculateSize();
+
+        this.leftLeg = new BodyPart(this.legImg);
+        this.leftLeg.pos = createVector(
+            center.x - this.body.actualSize.width * 0.25,
+            center.y + this.body.actualSize.height * 0.75
+        );
+
+        this.rightLeg = new BodyPart(this.legImg);
+        this.rightLeg.pos = createVector(
+            center.x + this.body.actualSize.width * 0.25,
+            center.y + this.body.actualSize.height * 0.75
+        );
+
+        this.rightLeg.size = this.leftLeg.size = createVector(this.body.size.x * 0.9, this.body.size.y * 0.9);
+        this.rightLeg.calculateSize();
+        this.leftLeg.calculateSize();
+        this.rightLeg.pivot = this.leftLeg.pivot = createVector(0, this.leftLeg.actualSize.height);
+
+        this.leftLeg.color = this.rightLeg.color = color(config.settings.player.leg);
+
+        this.cap = new BodyPart(this.capImg);
+        this.cap.pos = createVector(
+            this.head.pos.x - this.head.actualSize.width * 0.45,
+            center.y - this.body.actualSize.height * 0.95
+        );
+        this.cap.size = createVector(this.body.size.x * 0.9, this.body.size.y * 0.9);
+        this.cap.color = color(config.settings.player.cap);
+        this.cap.rotation = radians(-15);
+        this.cap.calculateSize();
+    }
+
+    setupAnimations() {
+        let animDuration = 400;
+
+        let bodyAnimMaxScale = 1;
+        let bodyAnimMinScale = 0.97;
+        let bodyAnimMinOffset = 0;
+        let bodyAnimMaxOffset = 5;
+
+        let bodyAnim = () => {
+            shifty
+                .tween({
+                    from: {
+                        scale: bodyAnimMinScale,
+                        offset: bodyAnimMinOffset,
+                    },
+                    to: {
+                        scale: bodyAnimMaxScale,
+                        offset: bodyAnimMaxOffset,
+                    },
+                    duration: animDuration,
+                    easing: "easeInQuad",
+                    step: (state) => {
+                        this.body.scale = createVector(state.scale, state.scale);
+                        this.body.offset.y = state.offset;
+                    },
+                })
+                .then(() =>
+                    shifty.tween({
+                        from: {
+                            scale: bodyAnimMaxScale,
+                            offset: bodyAnimMaxOffset,
+                        },
+                        to: {
+                            scale: bodyAnimMinScale,
+                            offset: bodyAnimMinOffset,
+                        },
+                        duration: animDuration,
+                        easing: "easeInQuad",
+                        step: (state) => {
+                            this.body.scale = createVector(state.scale, state.scale);
+                            this.body.offset.y = state.offset;
+                        },
+                    })
+                )
+                .then(bodyAnim);
+        };
+
+        let headAnimMinOffset = 0;
+        let headAnimMaxOffset = 6;
+        let headAnim = () => {
+            shifty
+                .tween({
+                    from: {
+                        offset: headAnimMinOffset,
+                    },
+                    to: {
+                        offset: headAnimMaxOffset,
+                    },
+                    duration: animDuration,
+                    easing: "easeInQuad",
+                    step: (state) => {
+                        this.head.offset.y = this.cap.offset.y = state.offset;
+                    },
+                })
+                .then(() =>
+                    shifty.tween({
+                        from: {
+                            offset: headAnimMaxOffset,
+                        },
+                        to: {
+                            offset: headAnimMinOffset,
+                        },
+                        duration: animDuration,
+                        easing: "easeInQuad",
+                        step: (state) => {
+                            this.head.offset.y = this.cap.offset.y = state.offset;
+                        },
+                    })
+                )
+                .then(headAnim);
+        };
+
+        let legsMinScale = 0.95;
+        let legsMaxScale = 1;
+
+        let legsAnim = () => {
+            shifty
+                .tween({
+                    from: {
+                        scale: legsMinScale,
+                    },
+                    to: {
+                        scale: legsMaxScale,
+                    },
+                    duration: animDuration,
+                    easing: "easeInQuad",
+                    step: (state) => {
+                        this.leftLeg.scale.y = this.rightLeg.scale.y = state.scale;
+                    },
+                })
+                .then(() =>
+                    shifty.tween({
+                        from: {
+                            scale: legsMaxScale,
+                        },
+                        to: {
+                            scale: legsMinScale,
+                        },
+                        duration: animDuration,
+                        easing: "easeInQuad",
+                        step: (state) => {
+                            this.leftLeg.scale.y = this.rightLeg.scale.y = state.scale;
+                        },
+                    })
+                )
+                .then(legsAnim);
+        };
+
+        bodyAnim();
+        headAnim();
+        legsAnim();
+    }
+
+    update() {}
+
+    draw() {
+        this.leftLeg.draw();
+        this.rightLeg.draw();
+        this.head.draw();
+        this.body.draw();
+        this.cap.draw();
     }
 }
 
@@ -288,7 +539,7 @@ class Game {
 
         init();
 
-        this.chose = false;
+        this.chose = true;
 
         this.teamButtons = [];
         this.overButtons = [];
@@ -334,6 +585,8 @@ class Game {
         this.bat = new Bat();
         this.ball = new Ball();
         this.ballcd = BallThrowCooldown;
+
+        this.player = new Player();
     }
 
     permaUpdate() {
@@ -353,10 +606,13 @@ class Game {
             this.ball.update();
             this.bat.update();
             this.ball.checkBat(this.bat);
+            this.player.update();
         }
 
         this.bat.draw();
         this.ball.draw();
+
+        this.player.draw();
 
         this.ballcd -= deltaTime / 1000;
         if (this.ballcd < 0) {
@@ -458,7 +714,7 @@ class Game {
         this.scoreFontSize = height / 20;
         this.delayBeforeExit = 1.2;
 
-        // Don't touch these
+        // Don'1t touch these
         this.started = false;
         this.c_instructionsFontSize = 0;
         this.c_scoreFontSize = 0;
@@ -722,6 +978,7 @@ class Rectangle {
         this.w = w;
         this.h = h;
         this.debugColor = color(255, 0, 0);
+        this.cornerRadius = 0;
     }
 
     center() {
@@ -762,7 +1019,7 @@ class Rectangle {
     }
 
     draw() {
-        rect(this.x, this.y, this.w, this.h);
+        rect(this.x, this.y, this.w, this.h, this.cornerRadius);
     }
 
     textInside(txt) {

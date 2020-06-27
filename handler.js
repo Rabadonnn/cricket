@@ -90,6 +90,12 @@ function loadImages() {
     window.images.stadium = loadImage(config.settings.stadium);
     window.images.cricketBall = loadImage(config.settings.cricketBall);
     window.images.cricketBat = loadImage(config.settings.cricketBat);
+
+    window.images.player = {};
+    window.images.player.head = loadImage(config.settings.player.head);
+    window.images.player.cap = loadImage("assets/player_cap.png");
+    window.images.player.body = loadImage("assets/player_body.png");
+    window.images.player.leg = loadImage("assets/player_leg.png");
 }
 
 function loadSounds() {
