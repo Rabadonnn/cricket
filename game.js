@@ -1,6 +1,6 @@
 let config = require("visual-config-exposer").default;
 
-const DEBUG = false;
+const DEBUG = true;
 
 function getTeams() {
     let result = [];
@@ -205,7 +205,6 @@ class Bat {
 
 class Ball {
     constructor() {
-        this.canvas = createGraphics(stadium.size.width, stadium.size.height, WEBGL);
         this.img = window.images.cricketBall;
 
         this.setDefaults();
@@ -224,20 +223,25 @@ class Ball {
     }
 
     draw() {
-        this.canvas.clear();
-        this.canvas.push();
-        this.canvas.translate(this.pos.x, this.pos.y, this.pos.z);
-        this.canvas.imageMode(CENTER);
-        this.canvas.image(this.img, 0, 0, this.size, this.size);
-        this.canvas.imageMode(CORNER);
-        this.canvas.pop();
+        let s = 1 / (1 + this.pos.z);
+        let x = this.pos.x * s + width / 2;
+        let y = this.pos.y * s + height / 2;
 
-        image(this.canvas, width / 2 - stadium.size.width / 2, 0);
+        push();
+        translate(x, y);
+        scale(s);
+        rotate(this.rotation);
+        imageMode(CENTER);
+        image(this.img, 0, 0, this.size, this.size);
+        imageMode(CORNER);
+        pop();
     }
 
     throw() {
         this.setDefaults();
-        this.vel = createVector(0, 0, -20);
+
+        let sz = 0.1;
+        this.vel = createVector(0, 0, sz);
     }
 
     checkBat(bat) {}
@@ -403,7 +407,7 @@ class Player {
         let animDuration = 400;
 
         let bodyAnimMaxScale = 1;
-        let bodyAnimMinScale = 0.97;
+        let bodyAnimMinScale = 0.98;
         let bodyAnimMinOffset = 0;
         let bodyAnimMaxOffset = 5;
 
@@ -481,7 +485,7 @@ class Player {
                 .then(headAnim);
         };
 
-        let legsMinScale = 0.95;
+        let legsMinScale = 0.96;
         let legsMaxScale = 1;
 
         let legsAnim = () => {
@@ -617,6 +621,7 @@ class Game {
         this.ballcd -= deltaTime / 1000;
         if (this.ballcd < 0) {
             this.ballcd = BallThrowCooldown;
+            // console.log("Last ball pos: ", this.ball.pos);
             this.ball.throw();
         }
 
@@ -690,6 +695,7 @@ class Game {
         if (this.chose) {
             this.bat.onMousePress();
         }
+        // console.log(this.ball.pos.z);
     }
 
     finishGame() {
