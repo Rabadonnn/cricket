@@ -11,12 +11,13 @@
 [] calibrate bat and ball collision response
 [] add some sort of juiciness when hitting the ball, also some visuals
     when the ball gets out of the hitting radius so you can actually lose
+[] maybe some particles when hitting the ball so it would look better
 
 [*] player images - be white with gray details
 [] edit player assets, make them more professional
 [*] player animation - will scale and rotate every part of his body, won't need to be complicated
 [] maybe edit the player animation a bit
-[] player customization - will use p5 tint() 
+[*] player customization - will use p5 tint() 
 
 [] teams / players customization
 [] game logic - team selection - player - win - lose - etc

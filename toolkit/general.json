@@ -120,46 +120,65 @@
                     "type": "image"
                 },
                 {
-                    "key": "player",
-                    "header": "Player",
-                    "type": "array",
-                    "fields": [
-                        {
-                            "key": "head",
-                            "type": "image",
-                            "header": "Player head image"
-                        },
-                        {
-                            "key": "body",
-                            "type": "color",
-                            "header": "Player body color"
-                        },
-                        {
-                            "key": "cap",
-                            "type": "color",
-                            "header": "Player cap color"
-                        },
-                        {
-                            "key": "leg",
-                            "type": "color",
-                            "header": "Player legs color"
-                        }
-                    ]
-                },
-                {
                     "key": "teams",
                     "type": "array",
                     "header": "Teams array",
                     "fields": [
                         {
-                            "key": "t1",
-                            "header": "Team 1",
-                            "type": "color"
-                        },
-                        {
-                            "key": "t2",
-                            "header": "Team 2",
-                            "type": "color"
+                            "key": "team",
+                            "header": "Team",
+                            "type": "array",
+                            "fields": [
+                                {
+                                    "key": "logo",
+                                    "header": "Team logo",
+                                    "type": "image"
+                                },
+                                {
+                                    "key": "name",
+                                    "header": "Team name",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "players",
+                                    "header": "Players",
+                                    "type": "array",
+                                    "fields": [
+                                        {
+                                            "key": "player",
+                                            "header": "Player",
+                                            "type": "array",
+                                            "fields": [
+                                                {
+                                                    "key": "name",
+                                                    "header": "Player name",
+                                                    "type": "text"
+                                                },
+                                                {
+                                                    "key": "head",
+                                                    "header": "Head image",
+                                                    "type": "image"
+                                                },
+                                                {
+                                                    "key": "body",
+                                                    "header": "Shirt color",
+                                                    "type": "color"
+                                                },
+                                                {
+                                                    "key": "cap",
+                                                    "header": "Cap color",
+                                                    "type": "color"
+                                                },
+                                                {
+                                                    "key": "legs",
+                                                    "header": "Legs color",
+                                                    "type": "color"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -328,15 +347,47 @@
             "instructions3": "Have fun!",
             "textColor": "#000",
             "stadium": "assets/cricket_stadium.png",
-            "player": {
-                "head": "assets/player_head.png",
-                "body": "#9DCEBA",
-                "cap": "#505750",
-                "leg": "#808080"
-            },
             "teams": {
-                "t1": "#0000ff",
-                "t2": "#ff0000"
+                "team1": {
+                    "name": "Team One",
+                    "logo": "assets/apple.png",
+                    "players": {
+                        "player1": {
+                            "name": "P1T1",
+                            "head": "assets/player_head.png",
+                            "body": "#9DCEBA",
+                            "cap": "#505750",
+                            "legs": "#808080"
+                        },
+                        "player2": {
+                            "name": "P2T1",
+                            "head": "assets/player_head.png",
+                            "body": "#9DCEBA",
+                            "cap": "#505750",
+                            "legs": "#808080"
+                        }
+                    }
+                },
+                "team2": {
+                    "name": "Team Two",
+                    "logo": "assets/banana.png",
+                    "players": {
+                        "player1": {
+                            "name": "P1T2",
+                            "head": "assets/player_head.png",
+                            "body": "#9DCEBA",
+                            "cap": "#505750",
+                            "legs": "#808080"
+                        },
+                        "player2": {
+                            "name": "P2T2",
+                            "head": "assets/player_head.png",
+                            "body": "#9DCEBA",
+                            "cap": "#505750",
+                            "legs": "#808080"
+                        }
+                    }
+                }
             },
             "cricketBall": "assets/cricket_ball.png",
             "cricketBat": "assets/cricket_bat.png",

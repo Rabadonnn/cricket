@@ -91,11 +91,18 @@ function loadImages() {
     window.images.cricketBall = loadImage(config.settings.cricketBall);
     window.images.cricketBat = loadImage(config.settings.cricketBat);
 
-    window.images.player = {};
-    window.images.player.head = loadImage(config.settings.player.head);
-    window.images.player.cap = loadImage("assets/player_cap.png");
-    window.images.player.body = loadImage("assets/player_body.png");
-    window.images.player.leg = loadImage("assets/player_leg.png");
+    console.log(config.settings.teams);
+
+    window.images.teamLogos = {}
+    window.images.playerHeads = {};
+
+    for (let [key, value] of Object.entries(config.settings.teams)) {
+        window.images.teamLogos[value.name] = loadImage(value.logo);
+
+        for (let [key2, value2] of Object.entries(value.players)) {
+            window.images.playerHeads[value2.name] = loadImage(value2.head);
+        }
+    }
 }
 
 function loadSounds() {
