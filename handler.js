@@ -93,7 +93,7 @@ function loadImages() {
 
     console.log(config.settings.teams);
 
-    window.images.teamLogos = {}
+    window.images.teamLogos = {};
     window.images.playerHeads = {};
 
     for (let [key, value] of Object.entries(config.settings.teams)) {
@@ -103,6 +103,14 @@ function loadImages() {
             window.images.playerHeads[value2.name] = loadImage(value2.head);
         }
     }
+
+    window.images.player = {
+        leg: loadImage("assets/player_leg.png"),
+        body: loadImage("assets/player_body.png"),
+        cap: loadImage("assets/player_cap.png"),
+    };
+
+    window.images.wickets = loadImage("assets/cricket_wickets.png");
 }
 
 function loadSounds() {

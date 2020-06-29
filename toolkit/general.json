@@ -183,6 +183,21 @@
                     ]
                 },
                 {
+                    "key": "timeGap",
+                    "header": "Time between ball throw",
+                    "type": "range",
+                    "options": {
+                        "minValue": 1,
+                        "maxValue": 4,
+                        "stepSize": 0.5
+                    }
+                },
+                {
+                    "key": "wickets",
+                    "header": "Wickets color",
+                    "type": "color"
+                },
+                {
                     "key": "textColor",
                     "header": "In Game Text Color",
                     "type": "color"
@@ -387,8 +402,30 @@
                             "legs": "#808080"
                         }
                     }
+                },
+                "team3": {
+                    "name": "Team Three",
+                    "logo": "assets/pear.png",
+                    "players": {
+                        "player1": {
+                            "name": "P1T3",
+                            "head": "assets/player_head.png",
+                            "body": "#9DCEBA",
+                            "cap": "#505750",
+                            "legs": "#808080"
+                        },
+                        "player2": {
+                            "name": "P2T3",
+                            "head": "assets/player_head.png",
+                            "body": "#9DCEBA",
+                            "cap": "#505750",
+                            "legs": "#808080"
+                        }
+                    }
                 }
             },
+            "timeGap": 2,
+            "wickets": "#e8dfc5",
             "cricketBall": "assets/cricket_ball.png",
             "cricketBat": "assets/cricket_bat.png",
             "theme": "assets/theme.mp3",

@@ -1,6 +1,6 @@
 let config = require("visual-config-exposer").default;
 
-const DEBUG = false;
+const DEBUG = true;
 
 let Teams;
 const ChooseTeamText = "Choose your team";
@@ -22,12 +22,12 @@ let BallTargetSize;
 let BallMinX;
 let BallMaxX;
 const BallSize = 100;
-const BallThrowCooldown = 3;
 
 const BatSize = 160;
 let BatPos;
 let MaxBatAngle;
 let BatAngle;
+let TimeGap;
 
 function init() {
     GroundHeight = height - height / 7;
@@ -51,6 +51,8 @@ function init() {
     BatAngle = -PI / 10;
 
     Teams = getTeams();
+
+    TimeGap = parseFloat(config.settings.timeGap);
 }
 
 function getTeams() {
@@ -160,6 +162,7 @@ class TeamButton {
         }
 
         textSize(17);
+        textAlign(CENTER, TOP);
         fill(255);
         noStroke();
         text(this.text, this.textBox.x, this.textBox.y, this.textBox.w, this.textBox.h);
@@ -197,17 +200,30 @@ class OverButton extends TeamButton {
     }
 }
 
+const wickets = {};
 const stadium = {
     init: () => {
         stadium.x = width / 2;
         stadium.y = height / 2;
         stadium.img = window.images.stadium;
         stadium.size = calculateAspectRatioFit(stadium.img.width, stadium.img.height, width, height);
+
+        wickets.img = window.images.wickets;
+        wickets.x = width / 2;
+        wickets.y = (stadium.size.height / 2) * 1.2;
+        wickets.size = calculateAspectRatioFit(wickets.img.width, wickets.img.height, 90, 90);
+        wickets.color = color(config.settings.wickets);
     },
     draw: () => {
         imageMode(CENTER);
+
         image(stadium.img, stadium.x, stadium.y, stadium.size.width, stadium.size.height);
+
+        tint(wickets.color);
+        image(wickets.img, wickets.x, wickets.y, wickets.size.width, wickets.size.height);
+        noTint();
         imageMode(CORNER);
+
     },
 };
 
@@ -275,7 +291,7 @@ class Ball {
         // check if the ball can be hit by comparing it's scale
         this.hitPoints = {
             min: 0.3,
-            max: 0.2,
+            max: 0.2
         };
 
         this.setDefaults();
@@ -292,10 +308,14 @@ class Ball {
         this.perspective = 1;
         this.minsz = 0.15;
         this.maxsz = 0.3;
+        this.rotDir = random(100) < 50 ? -1 : 1;
+        this.rotSpeed = random(PI / PI / 2);
     }
 
     update() {
         this.pos.add(this.vel);
+
+        this.rotation += (this.rotDir * this.rotSpeed * deltaTime) / 1000;
 
         let s = this.perspective / (this.perspective + this.pos.z);
         let x = this.pos.x * s + width / 2;
@@ -336,15 +356,21 @@ class Ball {
         this.pos.x = x;
 
         let sz = random(this.minsz, this.maxsz);
-        this.vel = createVector(0, 0, sz);
+        let sx = BallTarget.x - x - width / 2;
+        sx *= 0.015;
+        this.vel = createVector(sx, 0, sz);
 
         if (DEBUG) {
-            console.log("Ball z velocity", sz);
+            console.log("Ball vel", this.vel);
         }
     }
 
     get canBeHit() {
-        return this.scale < this.hitPoints.min && this.scale > this.hitPoints.max;
+        let d = dist(this.drawPos.x, this.drawPos.y, BallTarget.x, BallTarget.y);
+        fill(255, 0, 0);
+        circle(BallTarget.x, BallTarget.y, 5);
+
+        return d < 30;
     }
 
     checkBat(bat) {
@@ -353,6 +379,8 @@ class Ball {
             let vx = map(this.vel.z, this.minsz, this.maxsz, 25, 40);
             this.vel.x = vx;
             this.beenHit = true;
+            text(d, 100, 100);
+
         }
     }
 }
@@ -452,16 +480,18 @@ class BodyPart {
 }
 
 class Player {
-    constructor(name, head, body, legs, cap) {
+    constructor(player) {
+        this.name = player.name;
+
         this.legImg = window.images.player.leg;
         this.capImg = window.images.player.cap;
         this.bodyImg = window.images.player.body;
 
-        this.headImg = head;
-        this.name = name;
-        this.bodyColor = body;
-        this.legsColor = legs;
-        this.capColor = cap;
+        this.headImg = player.head;
+        this.name = player.name;
+        this.bodyColor = player.body;
+        this.legsColor = player.legs;
+        this.capColor = player.cap;
 
         this.setupParts();
         this.setupAnimations();
@@ -513,7 +543,7 @@ class Player {
             center.y - this.body.actualSize.height * 0.95
         );
         this.cap.size = createVector(this.body.size.x * 0.9, this.body.size.y * 0.9);
-        this.cap.color = this.capColor; 
+        this.cap.color = this.capColor;
         this.cap.rotation = radians(-15);
         this.cap.calculateSize();
     }
@@ -676,7 +706,7 @@ class Game {
 
         init();
 
-        this.chose = false;
+        this.chose = true;
 
         this.teamButtons = [];
         this.overButtons = [];
@@ -694,9 +724,7 @@ class Game {
             let data = Teams[i];
             this.teamButtons.push(
                 new TeamButton(x, y, data, () => {
-                    if (!this.team) {
-                        this.team = Teams[i];
-                    }
+                    this.tournament.teamIndex = i;
                 })
             );
         }
@@ -711,19 +739,24 @@ class Game {
             this.overButtons.push(
                 new OverButton(x, y, n, () => {
                     if (!this.overCount) {
-                        this.overCount = n;
+                        this.tournament.overs = n;
                     }
                 })
             );
         }
 
-        this.team = undefined;
-        this.overCount = undefined;
-        this.ballCount = undefined;
-
         this.bat = new Bat();
         this.ball = new Ball();
-        this.ballcd = BallThrowCooldown;
+        this.ballcd = TimeGap;
+
+        this.tournament = {
+            teamIndex: null,
+            currentPlayerIndex: null,
+            againstIndex: null,
+            wins: 0,
+            overs: null,
+            balls: null,
+        };
     }
 
     permaUpdate() {
@@ -743,6 +776,14 @@ class Game {
             this.ball.update();
             this.bat.update();
             this.ball.checkBat(this.bat);
+
+            if (this.player) {
+                this.player.update();
+            }
+        }
+
+        if (this.player) {
+            this.player.draw();
         }
 
         this.bat.draw();
@@ -750,13 +791,12 @@ class Game {
 
         this.ballcd -= deltaTime / 1000;
         if (this.ballcd < 0) {
-            this.ballcd = BallThrowCooldown;
-            console.log("Last ball scale", this.ball.scale);
+            this.ballcd = TimeGap;
             this.ball.throw();
         }
 
         if (DEBUG) {
-            this.debugHUD();
+            // this.debugHUD();
         }
     }
 
@@ -801,19 +841,18 @@ class Game {
     }
 
     choose() {
-        // draw choose team text
         textFont(config.preGameScreen.fontFamily);
         textSize(this.instructionsFontSize * 1.6);
         textAlign(CENTER);
         noStroke();
         fill(config.settings.textColor);
 
-        if (!this.team) {
+        if (this.tournament.teamIndex === null) {
             text(ChooseTeamText, 20, 40, width - 40, this.instructionsFontSize * 1.8);
             this.teamButtons.map((b) => {
                 b.draw();
             });
-        } else if (!this.overCount) {
+        } else if (this.tournament.overs === null) {
             text(ChooseOversText, 20, 40, width - 40, this.instructionsFontSize * 1.8);
 
             this.overButtons.map((b) => {
@@ -821,10 +860,21 @@ class Game {
             });
         }
 
-        if (this.team && this.overCount) {
+        if (this.tournament.teamIndex !== null && this.tournament.overs !== null) {
             this.chose = true;
-            this.ballCount = this.overCount * BallsPerOver;
+            this.tournament.balls = this.tournament.overs * BallsPerOver;
+            this.tournament.currentPlayerIndex = 0;
+            console.log("Tournament", this.tournament);
+
+            this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
+
+            console.log("Current player", this.player);
         }
+    }
+
+    makePlayer(teamIndex, playerIndex) {
+        let p = Teams[teamIndex].players[playerIndex];
+        this.player = new Player(p);
     }
 
     onMousePress() {
