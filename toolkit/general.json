@@ -349,7 +349,7 @@
             "backgroundImage": "assets/background.png",
             "titleImage": "assets/placeholder_logo.jpg",
             "titleImageSize": 200,
-            "fontFamily": "Balsamiq Sans",
+            "fontFamily": "Overpass",
             "showLeaderboardButton": true,
             "leaderboardButtonText": "Leadeboard",
             "showSoundButton": true,

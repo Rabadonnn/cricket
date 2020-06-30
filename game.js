@@ -91,6 +91,9 @@ class TeamButton {
         this.onPress = onPress;
         this.lastPress = false;
 
+        this.rect.cornerRadius = 12;
+        this.hoverRect.cornerRadius = 12;
+
         if (this.data) {
             this.img = this.data.logo;
             this.text = this.data.text;
@@ -440,8 +443,6 @@ class PauseButton extends TeamButton {
     }
 
     draw() {
-        this.update();
-
         strokeWeight(5);
         stroke(0);
         fill(255);
@@ -829,53 +830,96 @@ class Game {
         this.endRound = false;
 
         this.scoreboard = new ScoreBoard();
+    }
 
-        this.vsScreenCd = 2;
+    initVsScreen() {
+        this.vsScreenCd = 1.5;
         this.c_vsScreenCd = this.vsScreenCd;
-        this.drawVs = false;
+        this.drawVs = true;
+
+        this.vs_t1 = Teams[this.tournament.teamIndex];
+        this.vs_t2 = Teams[this.tournament.againstIndex];
+
+        let size = 100;
+        this.vs_size1 = calculateAspectRatioFit(
+            this.vs_t1.logo.width,
+            this.vs_t1.logo.height,
+            size,
+            size
+        );
+        this.vs_size2 = calculateAspectRatioFit(
+            this.vs_t2.logo.width,
+            this.vs_t2.logo.height,
+            size,
+            size
+        );
+
+        this.canAnim = true;
+
+        this.teamFontSize = 30;
+        this.vsFontSize = 45;
+
+        this.paused = true;
+
+        this.offset = 0;
     }
 
     drawVsScreen() {
         stadium.draw();
 
-        textSize(30);
+        if (this.canAnim && this.c_vsScreenCd < this.vsScreenCd / 3) {
+            this.canAnim = false;
+            shifty.tween({
+                from: {
+                    offset: this.offset,
+                    teamFontSize: this.teamFontSize,
+                    vsFontSize: this.vsFontSize,
+                },
+                to: {
+                    offset: width / 2,
+                    teamFontSize: 0,
+                    vsFontSize: 0,
+                },
+                easing: "easeInQuad",
+                duration: this.c_vsScreenCd * 1000,
+                step: (state) => {
+                    this.offset = state.offset;
+                    this.teamFontSize = state.teamFontSize;
+                    this.vsFontSize = state.vsFontSize;
+                },
+            });
+        }
+
+        textSize(this.teamFontSize);
         fill(0);
         noStroke();
         textFont(config.preGameScreen.fontFamily);
-
-        let t1 = Teams[this.tournament.teamIndex];
-        let t2 = Teams[this.tournament.againstIndex];
-
-        let size = 100;
-        let size1 = calculateAspectRatioFit(t1.logo.width, t1.logo.height, size, size);
-        let size2 = calculateAspectRatioFit(t2.logo.width, t2.logo.height, size, size);
-
         textAlign(RIGHT, CENTER);
-        text(t1.name, width / 2, height / 2 - height / 4);
+        text(this.vs_t1.name, width / 2 - this.offset, height / 2 - height / 4);
 
         textAlign(LEFT, CENTER);
-        text(t2.name, width / 2, height / 2 + height / 4);
+        text(this.vs_t2.name, width / 2 + this.offset, height / 2 + height / 4);
 
         textStyle(BOLD);
-        textSize(45);
+        textSize(this.vsFontSize);
         textAlign(CENTER, CENTER);
         text("VS", width / 2, height / 2);
         textStyle(NORMAL);
 
         imageMode(CENTER);
         image(
-            t1.logo,
-            width / 2 + size1.width * 1.5,
+            this.vs_t1.logo,
+            width / 2 + this.vs_size1.width * 1.5 + this.offset,
             height / 2 - height / 4,
-            size1.width,
-            size1.height
+            this.vs_size1.width,
+            this.vs_size1.height
         );
         image(
-            t2.logo,
-            width / 2 - size2.width * 1.5,
+            this.vs_t2.logo,
+            width / 2 - this.vs_size2.width * 1.5 - this.offset,
             height / 2 + height / 4,
-            size2.width,
-            size2.height
+            this.vs_size2.width,
+            this.vs_size2.height
         );
         imageMode(CORNER);
     }
@@ -895,13 +939,31 @@ class Game {
             this.choose();
         } else {
             this.updateGame();
-        }
 
-        this.pauseButton.draw();
+            if (this.paused) {
+                fill(0, 0, 0, 80);
+                noStroke();
+                rect(0, 0, width, height);
+                fill(255);
+                textSize(40);
+                textAlign(CENTER, CENTER);
+                textFont(config.preGameScreen.fontFamily);
+                text("Paused", width / 2, height / 2);
+            }
 
-        if (this.drawVs) {
-            this.drawVsScreen();
-            this.c_vsScreenCd -= deltaTime / 1000;
+            if (this.chose) {
+                this.pauseButton.update();
+                this.pauseButton.draw();
+            }
+
+            if (this.drawVs) {
+                this.drawVsScreen();
+                this.c_vsScreenCd -= deltaTime / 1000;
+                if (this.c_vsScreenCd < 0) {
+                    this.drawVs = false;
+                    this.paused = false;
+                }
+            }
         }
     }
 
@@ -918,6 +980,14 @@ class Game {
 
             if (this.player) {
                 this.player.update();
+
+                this.ballcd -= deltaTime / 1000;
+                if (this.ballcd < 0 && this.tournament.balls > 0) {
+                    this.ballcd = TimeGap;
+                    this.ball.throw();
+                    this.tournament.balls--;
+                    this.endRound = false;
+                }
             }
         }
 
@@ -927,14 +997,6 @@ class Game {
 
         this.bat.draw();
         this.ball.draw();
-
-        this.ballcd -= deltaTime / 1000;
-        if (this.ballcd < 0 && this.tournament.balls > 0) {
-            this.ballcd = TimeGap;
-            this.ball.throw();
-            this.tournament.balls--;
-            this.endRound = false;
-        }
 
         this.scoreboard.draw(this);
 
@@ -1022,7 +1084,7 @@ class Game {
 
             this.tournament.againstIndex = this.getAgainstTeamIndex();
 
-            this.drawVs = true;
+            this.initVsScreen();
         }
     }
 
