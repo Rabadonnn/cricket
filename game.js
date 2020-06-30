@@ -377,8 +377,8 @@ class Ball {
     }
 
     get canBeHit() {
-        let d = abs(this.drawPos.y - BallTarget.y);
-        return d < 10;
+        this.distTilTarget = abs(this.drawPos.y - BallTarget.y);
+        return this.distTilTarget < 10;
     }
 
     checkBat(bat) {
@@ -387,6 +387,10 @@ class Ball {
             let vx = map(this.vel.z, this.minsz, this.maxsz, 25, 40);
             this.vel.x = vx;
             this.beenHit = true;
+            let score = map(this.distTilTarget, 1, 9, 6, 1);
+            score = floor(score);
+            score = constrain(score, 1, 6);
+            return score;
         }
     }
 }
@@ -397,7 +401,7 @@ class ScoreBoard {
         this.font = config.preGameScreen.fontFamily;
 
         this.height = 100;
-        this.verticalOffset = 10;
+        this.verticalOffset = 40;
 
         this.rect = new Rectangle(
             width / 2 - stadium.size.width / 2 + this.verticalOffset,
@@ -971,7 +975,18 @@ class Game {
         if (!this.paused) {
             this.ball.update();
             this.bat.update();
-            this.ball.checkBat(this.bat);
+
+            let score = this.ball.checkBat(this.bat);
+            if (score) {
+                let pos = randomPointInCircle(width / 2, height / 2, 100);
+                let acc = {
+                    x: random(-3, 3),
+                    y: random(-6, -2),
+                };
+                let ft = new FloatingText(score, pos.x, pos.y, acc, random(25, 40), 255);
+                ft.setLifespan(random(0.4, 0.7));
+                this.particles.push(ft);
+            }
 
             if (this.ball.passedTarget && !this.endRound) {
                 this.tournament.wickets--;
@@ -1258,6 +1273,14 @@ function setGradient(x, y, w, h, c1, c2) {
         stroke(c);
         line(x, i, x + w, i);
     }
+}
+
+function randomPointInCircle(x, y, r) {
+    let r_ = random(0, r);
+    let a = random(0, TWO_PI);
+    let x_ = x + cos(a) * r_;
+    let y_ = y + sin(a) * r_;
+    return createVector(x_, y_);
 }
 
 class FloatingText {
