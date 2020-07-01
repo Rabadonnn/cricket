@@ -860,6 +860,8 @@ class Game {
             score: 0,
             againstScore: 0,
             playedAgainst: [],
+            played: 0,
+            result: null,
         };
 
         this.endRound = false;
@@ -887,7 +889,7 @@ class Game {
     }
 
     initVsScreen() {
-        this.vsScreenCd = 3;
+        this.vsScreenCd = 2.5;
         this.c_vsScreenCd = this.vsScreenCd;
         this.drawVs = true;
 
@@ -1005,7 +1007,7 @@ class Game {
         } else {
             this.updateGame();
 
-            if (this.paused && !this.drawVs) {
+            if (this.paused && !this.drawVs && !this.tournament.result) {
                 fill(0, 0, 0, 80);
                 noStroke();
                 rect(0, 0, width, height);
@@ -1016,7 +1018,7 @@ class Game {
                 text("Paused", width / 2, height / 2);
             }
 
-            if (this.chose) {
+            if (this.chose && !this.tournament.result) {
                 this.pauseButton.update();
                 this.pauseButton.draw();
             }
@@ -1029,6 +1031,10 @@ class Game {
                     this.paused = false;
                 }
             }
+
+            if (this.tournament.result) {
+                this.drawFinalScreen();
+            }
         }
     }
 
@@ -1036,9 +1042,22 @@ class Game {
         this.tournament.currentPlayerIndex++;
         if (this.tournament.currentPlayerIndex == Teams[this.tournament.teamIndex].players.length) {
             this.tournament.currentPlayerIndex = 0;
+            this.initMatch();
+            console.log("lost match");
+            this.tournament.played++;
         }
         this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
         this.resetBallsAndWickets();
+    }
+
+    drawFinalScreen() {
+        stadium.draw();
+    }
+
+    endGame(result) {
+        this.paused = true;
+        this.tournament.result = result;
+        console.log(result);
     }
 
     updateGame() {
@@ -1065,7 +1084,21 @@ class Game {
                 this.endRound = true;
 
                 if (this.tournament.wickets == 0) {
-                    this.nextPlayer();
+                    if (
+                        this.tournament.currentPlayerIndex ==
+                        Teams[this.tournament.teamIndex].players.length - 1
+                    ) {
+                        if (this.tournament.played == Teams.length - 1) {
+                            console.log("final")
+                            if (this.tournament.wins <= floor(Teams.length / 2)) {
+                                this.endGame("lose");
+                            }
+                        } else {
+                            this.nextPlayer();
+                        }
+                    } else {
+                        this.nextPlayer();
+                    }
                 }
             }
 
@@ -1086,7 +1119,13 @@ class Game {
 
                 if (this.tournament.score > this.tournament.againstScore) {
                     this.tournament.wins++;
-                    this.initMatch();
+                    console.log("Won match");
+                    this.tournament.played++;
+                    if (this.tournament.wins > floor(Teams.length / 2)) {
+                        this.endGame("win");
+                    } else {
+                        this.initMatch();
+                    }
                 }
             }
         }
@@ -1178,31 +1217,35 @@ class Game {
             this.tournament.overs = this.tournament.maxOvers;
             this.tournament.currentPlayerIndex = 0;
 
-            this.resetBallsAndWickets();
-
-            this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
             this.initMatch();
         }
     }
 
     initMatch() {
-        this.tournament.againstIndex = this.getAgainstTeamIndex();
-        this.initVsScreen();
-        this.tournament.againstScore = this.calculateAgainstScore();
-        this.tournament.gamesPlayed++;
-        this.tournament.score = 0;
-        this.tournament.playerIndex = 0;
-        this.ball = new Ball();
+        if (!this.tournament.result) {
+            this.tournament.againstIndex = this.getAgainstTeamIndex();
+            this.initVsScreen();
+            this.tournament.againstScore = this.calculateAgainstScore();
+            this.tournament.gamesPlayed++;
+            this.tournament.score = 0;
+            this.tournament.currentPlayerIndex = 0;
+            this.ball = new Ball();
+            this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
+            this.resetBallsAndWickets();
+            console.log("New match");
+        }
     }
 
     resetBallsAndWickets() {
         this.tournament.wickets = this.tournament.maxWickets;
         this.tournament.balls = this.tournament.maxOvers * BallsPerOver;
+        console.log("Resetting balls and wickets");
     }
 
     makePlayer(teamIndex, playerIndex) {
         let p = Teams[teamIndex].players[playerIndex];
         this.player = new Player(p);
+        console.log("Creating player");
     }
 
     onMousePress() {
@@ -1256,14 +1299,25 @@ class Game {
     calcBgImageSize() {
         // background image size calculations
         this.bgImage = window.images.background;
-        let originalRatios = {
-            width: window.innerWidth / this.bgImage.width,
-            height: window.innerHeight / this.bgImage.height,
-        };
+        if (config.preGameScreen.backgroundMode == "fit") {
+            let size = calculateAspectRatioFit(
+                this.bgImage.width,
+                this.bgImage.height,
+                width,
+                height
+            );
+            this.bgImageWidth = size.width;
+            this.bgImageHeight = size.height;
+        } else {
+            let originalRatios = {
+                width: window.innerWidth / this.bgImage.width,
+                height: window.innerHeight / this.bgImage.height,
+            };
 
-        let coverRatio = Math.max(originalRatios.width, originalRatios.height);
-        this.bgImageWidth = this.bgImage.width * coverRatio;
-        this.bgImageHeight = this.bgImage.height * coverRatio;
+            let coverRatio = Math.max(originalRatios.width, originalRatios.height);
+            this.bgImageWidth = this.bgImage.width * coverRatio;
+            this.bgImageHeight = this.bgImage.height * coverRatio;
+        }
     }
 
     draw() {
