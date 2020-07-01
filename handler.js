@@ -65,12 +65,6 @@ window.restartGame = () => {
             window.sounds.theme.play();
         }
     } catch (err) {}
-
-    window.onerror = function (message, source, lineno, colno, error) {
-        console.log(message, source, lineno);
-    };
-
-    window.setScreen("gameScreen");
 };
 
 window.soundEnabled = true;
@@ -90,8 +84,6 @@ function loadImages() {
     window.images.stadium = loadImage(config.settings.stadium);
     window.images.cricketBall = loadImage(config.settings.cricketBall);
     window.images.cricketBat = loadImage(config.settings.cricketBat);
-
-    console.log(config.settings.teams);
 
     window.images.teamLogos = {};
     window.images.playerHeads = {};

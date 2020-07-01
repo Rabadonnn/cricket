@@ -400,34 +400,61 @@ class ScoreBoard {
         this.textSize = 25;
         this.font = config.preGameScreen.fontFamily;
 
-        this.height = 100;
-        this.verticalOffset = 40;
+        this.height = 70;
+        this.horizontalOffset = 20;
+        this.horizontalPadding = 20;
 
         this.rect = new Rectangle(
-            width / 2 - stadium.size.width / 2 + this.verticalOffset,
-            height - this.height,
-            stadium.size.width - this.verticalOffset * 2,
+            width / 2 - stadium.size.width / 2 + this.horizontalOffset,
+            height - this.height - 10,
+            stadium.size.width - this.horizontalOffset * 2,
             this.height
         );
 
         this.textColor = 0;
+
+        this.rect.cornerRadius = 20;
     }
 
     draw(game) {
         noFill();
-        stroke(255, 0, 0);
-        strokeWeight(1);
-        // this.rect.draw();
+        fill(255, 255, 255, 90);
+        noStroke();
+        this.rect.draw();
         textSize(this.textSize);
         noStroke();
         fill(this.textColor);
         textAlign(LEFT, CENTER);
         textFont(this.font);
-        text(`Wickets: ${game.tournament.wickets}`, this.rect.x + 5, this.rect.center().y);
+        text(
+            `Wickets: ${game.tournament.wickets}`,
+            this.rect.x + this.horizontalPadding,
+            this.rect.center().y
+        );
         textAlign(CENTER, CENTER);
         text(`Balls: ${game.tournament.balls}`, this.rect.center().x, this.rect.center().y);
         textAlign(RIGHT, CENTER);
-        text(`Overs: ${game.tournament.overs}`, this.rect.right(), this.rect.center().y);
+        text(
+            `Overs: ${game.tournament.overs}`,
+            this.rect.right() - this.horizontalPadding,
+            this.rect.center().y
+        );
+        textAlign(CENTER, TOP);
+
+        textAlign(RIGHT, TOP);
+        text(`Score: ${game.tournament.score}`, width / 2 - this.textSize, this.textSize / 2);
+
+        textAlign(LEFT, TOP);
+        text(`Goal: ${game.tournament.againstScore}`, width / 2 + this.textSize, this.textSize / 2);
+
+        textAlign(CENTER, TOP);
+        text(
+            `${Teams[game.tournament.teamIndex].name} : ${
+                Teams[game.tournament.teamIndex].players[game.tournament.currentPlayerIndex].name
+            }`,
+            width / 2,
+            this.textSize * 2
+        );
     }
 }
 
@@ -824,11 +851,15 @@ class Game {
             currentPlayerIndex: null,
             againstIndex: null,
             wins: 0,
+            gamesPlayed: 0,
             maxWickets: null,
             maxOvers: null,
             wickets: null,
             overs: null,
             balls: null,
+            score: 0,
+            againstScore: 0,
+            playedAgainst: [],
         };
 
         this.endRound = false;
@@ -836,8 +867,27 @@ class Game {
         this.scoreboard = new ScoreBoard();
     }
 
+    calculateAgainstScore() {
+        let maxScore = this.tournament.maxOvers * BallsPerOver * 6;
+        let minScore = maxScore * 0.3;
+        let avgScore = maxScore * 0.6;
+        let veryGoodScore = maxScore * 0.8;
+
+        let r = random(100);
+        let score;
+        if (r < 60) {
+            score = floor(random(minScore, avgScore * 1.1));
+        } else if (r < 90) {
+            score = floor(random(avgScore, veryGoodScore));
+        } else {
+            score = floor(random(avgScore, maxScore));
+        }
+
+        return score;
+    }
+
     initVsScreen() {
-        this.vsScreenCd = 1.5;
+        this.vsScreenCd = 3;
         this.c_vsScreenCd = this.vsScreenCd;
         this.drawVs = true;
 
@@ -871,7 +921,7 @@ class Game {
     drawVsScreen() {
         stadium.draw();
 
-        if (this.canAnim && this.c_vsScreenCd < this.vsScreenCd / 3) {
+        if (this.canAnim && this.c_vsScreenCd < this.vsScreenCd / 4) {
             this.canAnim = false;
             shifty.tween({
                 from: {
@@ -899,40 +949,51 @@ class Game {
         noStroke();
         textFont(config.preGameScreen.fontFamily);
         textAlign(RIGHT, CENTER);
-        text(this.vs_t1.name, width / 2 - this.offset, height / 2 - height / 4);
+        text(this.vs_t1.name, width / 2 - this.offset, height / 3 - this.vs_size1.height * 1.2);
 
         textAlign(LEFT, CENTER);
-        text(this.vs_t2.name, width / 2 + this.offset, height / 2 + height / 4);
+        text(this.vs_t2.name, width / 2 + this.offset, height / 3 + this.vs_size2.height * 1.2);
 
         textStyle(BOLD);
         textSize(this.vsFontSize);
         textAlign(CENTER, CENTER);
-        text("VS", width / 2, height / 2);
+        text("VS", width / 2, height / 3);
         textStyle(NORMAL);
 
         imageMode(CENTER);
         image(
             this.vs_t1.logo,
             width / 2 + this.vs_size1.width * 1.5 + this.offset,
-            height / 2 - height / 4,
+            height / 3 - this.vs_size1.height * 1.2,
             this.vs_size1.width,
             this.vs_size1.height
         );
         image(
             this.vs_t2.logo,
             width / 2 - this.vs_size2.width * 1.5 - this.offset,
-            height / 2 + height / 4,
+            height / 3 + this.vs_size2.height * 1.2,
             this.vs_size2.width,
             this.vs_size2.height
         );
         imageMode(CORNER);
+
+        textAlign(CENTER, TOP);
+        textSize(this.teamFontSize);
+        text(
+            `You need to score more than ${this.vs_t2.name}'s score of ${this.tournament.againstScore}`,
+            width / 2 - stadium.size.width / 2 + 50,
+            height - height / 3,
+            stadium.size.width - 100,
+            height / 3
+        );
     }
 
     getAgainstTeamIndex() {
         let r = floor(random(Teams.length));
-        if (r == this.tournament.teamIndex) {
+        if (r == this.tournament.teamIndex || this.tournament.playedAgainst.includes(r)) {
             return this.getAgainstTeamIndex();
         }
+        this.tournament.playedAgainst.push(r);
         return r;
     }
 
@@ -944,7 +1005,7 @@ class Game {
         } else {
             this.updateGame();
 
-            if (this.paused) {
+            if (this.paused && !this.drawVs) {
                 fill(0, 0, 0, 80);
                 noStroke();
                 rect(0, 0, width, height);
@@ -971,6 +1032,15 @@ class Game {
         }
     }
 
+    nextPlayer() {
+        this.tournament.currentPlayerIndex++;
+        if (this.tournament.currentPlayerIndex == Teams[this.tournament.teamIndex].players.length) {
+            this.tournament.currentPlayerIndex = 0;
+        }
+        this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
+        this.resetBallsAndWickets();
+    }
+
     updateGame() {
         if (!this.paused) {
             this.ball.update();
@@ -986,11 +1056,17 @@ class Game {
                 let ft = new FloatingText(score, pos.x, pos.y, acc, random(25, 40), 255);
                 ft.setLifespan(random(0.4, 0.7));
                 this.particles.push(ft);
+
+                this.tournament.score += score;
             }
 
             if (this.ball.passedTarget && !this.endRound) {
                 this.tournament.wickets--;
                 this.endRound = true;
+
+                if (this.tournament.wickets == 0) {
+                    this.nextPlayer();
+                }
             }
 
             if (this.player) {
@@ -1002,6 +1078,15 @@ class Game {
                     this.ball.throw();
                     this.tournament.balls--;
                     this.endRound = false;
+                }
+
+                if (this.tournament.balls == 0) {
+                    this.nextPlayer();
+                }
+
+                if (this.tournament.score > this.tournament.againstScore) {
+                    this.tournament.wins++;
+                    this.initMatch();
                 }
             }
         }
@@ -1091,26 +1176,41 @@ class Game {
         if (this.tournament.teamIndex !== null && this.tournament.maxOvers !== null) {
             this.chose = true;
             this.tournament.overs = this.tournament.maxOvers;
-            this.tournament.wickets = this.tournament.maxWickets;
-            this.tournament.balls = this.tournament.overs * BallsPerOver;
             this.tournament.currentPlayerIndex = 0;
 
+            this.resetBallsAndWickets();
+
             this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
-
-            this.tournament.againstIndex = this.getAgainstTeamIndex();
-
-            this.initVsScreen();
+            this.initMatch();
         }
+    }
+
+    initMatch() {
+        this.tournament.againstIndex = this.getAgainstTeamIndex();
+        this.initVsScreen();
+        this.tournament.againstScore = this.calculateAgainstScore();
+        this.tournament.gamesPlayed++;
+        this.tournament.score = 0;
+        this.tournament.playerIndex = 0;
+        this.ball = new Ball();
+    }
+
+    resetBallsAndWickets() {
+        this.tournament.wickets = this.tournament.maxWickets;
+        this.tournament.balls = this.tournament.maxOvers * BallsPerOver;
     }
 
     makePlayer(teamIndex, playerIndex) {
         let p = Teams[teamIndex].players[playerIndex];
         this.player = new Player(p);
-        console.log("Current player", this.player);
     }
 
     onMousePress() {
-        if (this.chose) {
+        if (
+            this.chose &&
+            mouseX > width / 2 - stadium.size.width / 2 &&
+            mouseX < width / 2 + stadium.size.width / 2
+        ) {
             this.bat.onMousePress();
         }
         // console.log(this.ball.pos.z);
@@ -1194,10 +1294,6 @@ class Game {
             this.mousePressed();
 
             this.permaUpdate();
-
-            if (this.started) {
-                this.updateGame();
-            }
 
             this.particles = this.particles.filter((p) => {
                 p.draw();
