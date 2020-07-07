@@ -1048,7 +1048,9 @@ class Game {
                 }
             }
 
-            this.checkWinLose();
+            if (!this.tournament.result) {
+                this.checkWinLose();
+            }
         }
 
         if (this.player) {
@@ -1078,16 +1080,20 @@ class Game {
 
         if (this.tournament.score > this.tournament.againstScore) {
             this.tournament.wins++;
-            this.initMatch();
-            return;
-        }
+            console.log("won match");
 
-        if (this.tournament.wins > floor(Teams.length / 2)) {
-            this.endGame("win");
+            if (this.tournament.wins > floor(Teams.length / 2)) {
+                this.endGame("win");
+                return;
+            } else {
+                this.initMatch();
+            }
+
             return;
         }
 
         if (this.tournament.wickets == 0) {
+            console.log("lost match");
             if (this.tournament.played - this.tournament.wins >= floor(Teams.length / 2)) {
                 this.endGame("lose");
             } else {
@@ -1166,13 +1172,6 @@ class Game {
     }
 
     initMatch() {
-        if (this.tournament.played == Teams.length) {
-            if (this.tournament.wins <= floor(Teams.length / 2)) {
-                this.endGame("lose");
-                return;
-            }
-        }
-
         if (!this.tournament.result) {
             this.tournament.againstIndex = this.getAgainstTeamIndex();
             this.initVsScreen();
