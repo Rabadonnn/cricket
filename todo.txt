@@ -19,6 +19,9 @@
 [] maybe edit the player animation a bit
 [*] player customization - will use p5 tint() 
 
+[] change player when wicket falls
+[] end game when wickets 0
+
 [] teams / players customization
 [] game logic - team selection - player - win - lose - etc
 
