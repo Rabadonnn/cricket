@@ -179,6 +179,11 @@
                                                     "type": "color"
                                                 },
                                                 {
+                                                    "key": "showCap",
+                                                    "header": "Show player cap",
+                                                    "type": "boolean"
+                                                },
+                                                {
                                                     "key": "legs",
                                                     "header": "Legs color",
                                                     "type": "color"
@@ -382,14 +387,16 @@
                             "head": "assets/player_head.png",
                             "body": "#9DCEBA",
                             "cap": "#505750",
-                            "legs": "#808080"
+                            "legs": "#808080",
+                            "showCap": true
                         },
                         "player2": {
                             "name": "P2T1",
                             "head": "assets/player_head.png",
                             "body": "#9DCEBA",
                             "cap": "#505750",
-                            "legs": "#808080"
+                            "legs": "#808080",
+                            "showCap": false
                         }
                     }
                 },
@@ -402,14 +409,16 @@
                             "head": "assets/player_head.png",
                             "body": "#9DCEBA",
                             "cap": "#505750",
-                            "legs": "#808080"
+                            "legs": "#808080",
+                            "showCap": true
                         },
                         "player2": {
                             "name": "P2T2",
                             "head": "assets/player_head.png",
                             "body": "#9DCEBA",
                             "cap": "#505750",
-                            "legs": "#808080"
+                            "legs": "#808080",
+                            "showCap": false
                         }
                     }
                 },

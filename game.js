@@ -29,6 +29,8 @@ let MaxBatAngle;
 let BatAngle;
 let TimeGap;
 
+const NewMatchTimeout = 2000;
+
 function init() {
     GroundHeight = height - height / 7;
     MinBallHeight = GroundHeight * 0.6;
@@ -44,7 +46,7 @@ function init() {
 
     stadium.init();
 
-    let bx = width / 2 + stadium.size.width * 0.2;
+    let bx = width / 2 + stadium.size.width * 0.12;
     let by = (height / 2) * 1.2;
     BatPos = createVector(bx, by);
     MaxBatAngle = -PI * 0.6;
@@ -70,6 +72,7 @@ function getTeams() {
             player.body = p.body;
             player.legs = p.legs;
             player.cap = p.cap;
+            player.showCap = p.showCap;
             players.push(player);
         }
         team.players = players;
@@ -243,9 +246,9 @@ class Bat {
         return this.rotation < MaxBatAngle / 3;
     }
 
-    draw() {
+    draw(offset) {
         push();
-        translate(this.pos.x, this.pos.y);
+        translate(offset.x + this.pos.x, offset.y + this.pos.y);
         scale(this.scale);
         rotate(this.rotation);
         imageMode(CENTER);
@@ -512,9 +515,12 @@ class BodyPart {
         this.actualSize = calculateAspectRatioFit(this.img.width, this.img.height, this.size.x, this.size.y);
     }
 
-    draw() {
+    draw(secondOffset) {
         push();
-        translate(this.pos.x + this.offset.x + this.pivot.x, this.pos.y + this.offset.y + this.pivot.y);
+        translate(
+            secondOffset.x + this.pos.x + this.offset.x + this.pivot.x,
+            secondOffset.y + this.pos.y + this.offset.y + this.pivot.y
+        );
         scale(this.scale.x, this.scale.y);
         rotate(this.rotation);
         imageMode(CENTER);
@@ -528,6 +534,8 @@ class BodyPart {
 class Player {
     constructor(player) {
         this.name = player.name;
+
+        this.player = player;
 
         this.legImg = window.images.player.leg;
         this.capImg = window.images.player.cap;
@@ -544,7 +552,7 @@ class Player {
     }
 
     setupParts() {
-        let center = createVector(width / 2 + (stadium.size.width / 2) * 0.65, BatPos.y - BatSize * 0.2);
+        let center = createVector(width / 2 + (stadium.size.width / 3) * 0.65, BatPos.y - BatSize * 0.2);
         let mainSize = 100;
 
         this.body = new BodyPart(this.bodyImg);
@@ -719,12 +727,14 @@ class Player {
 
     update() {}
 
-    draw() {
-        this.leftLeg.draw();
-        this.rightLeg.draw();
-        this.head.draw();
-        this.body.draw();
-        this.cap.draw();
+    draw(offset) {
+        this.leftLeg.draw(offset);
+        this.rightLeg.draw(offset);
+        this.head.draw(offset);
+        this.body.draw(offset);
+        if (this.player.showCap) {
+            this.cap.draw(offset);
+        }
     }
 }
 
@@ -743,6 +753,7 @@ class TeamPlayer {
         this.body;
         this.legs;
         this.cap;
+        this.showCap;
     }
 }
 
@@ -826,6 +837,10 @@ class Game {
         this.endRound = false;
 
         this.scoreboard = new ScoreBoard();
+
+        this.firstVsScreen = true;
+
+        this.playerOffset = createVector(0, 0);
     }
 
     calculateAgainstScore() {
@@ -873,7 +888,7 @@ class Game {
     drawVsScreen() {
         stadium.draw();
 
-        if (this.canAnim && this.c_vsScreenCd < this.vsScreenCd / 4) {
+        if (this.canAnim && this.c_vsScreenCd < 0.5) {
             this.canAnim = false;
             shifty.tween({
                 from: {
@@ -930,13 +945,22 @@ class Game {
         imageMode(CORNER);
 
         textAlign(CENTER, TOP);
-        textSize(this.teamFontSize);
+        textSize(this.teamFontSize * 0.8);
+        if (this.firstVsScreen) {
+            text(
+                `You need to win ${floor(Teams.length / 2) + 1} out of ${Teams.length - 1} matches to become champion`,
+                width / 2 - stadium.size.width / 2 + 50,
+                height - height / 3,
+                stadium.size.width - 100,
+                height / 4
+            );
+        }
         text(
-            `You need to score more than ${this.vs_t2.name}'s score of ${this.tournament.againstScore}`,
+            `Score more than ${this.vs_t2.name}'s score of ${this.tournament.againstScore}`,
             width / 2 - stadium.size.width / 2 + 50,
-            height - height / 3,
+            height - this.teamFontSize * 4,
             stadium.size.width - 100,
-            height / 3
+            this.teamFontSize * 4
         );
     }
 
@@ -954,7 +978,7 @@ class Game {
         // choose team state;
         if (!this.chose) {
             this.choose();
-        } else {
+        } else if (!this.tournament.result) {
             this.updateGame();
 
             if (this.paused && !this.drawVs && !this.tournament.result) {
@@ -979,12 +1003,13 @@ class Game {
                 if (this.c_vsScreenCd < 0) {
                     this.drawVs = false;
                     this.paused = false;
+                    this.firstVsScreen = false;
                 }
             }
+        }
 
-            if (this.tournament.result) {
-                this.drawFinalScreen();
-            }
+        if (this.tournament.result) {
+            this.drawFinalScreen();
         }
     }
 
@@ -995,22 +1020,108 @@ class Game {
             this.tournament.currentPlayerIndex = 0;
         }
 
-        this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
+        this.swappingPlayer = true;
+
+        this.initPlayerSwapAnim();
+    }
+
+    initPlayerSwapAnim() {
+        shifty
+            .tween({
+                from: {
+                    offset: this.playerOffset.x,
+                },
+                to: {
+                    offset: width / 2,
+                },
+                easing: "easeOutQuad",
+                duration: 700,
+                step: (state) => {
+                    this.playerOffset.x = state.offset;
+                },
+            })
+            .then(() => {
+                this.makePlayer(this.tournament.teamIndex, this.tournament.currentPlayerIndex);
+                shifty.tween({
+                    from: {
+                        offset: this.playerOffset.x,
+                    },
+                    to: {
+                        offset: 0,
+                    },
+                    easing: "elastic",
+                    duration: 500,
+                    step: (state) => {
+                        this.playerOffset.x = state.offset;
+                    },
+                });
+            })
+            .then(() => {
+                this.swappingPlayer = false;
+            });
+    }
+
+    confetti() {
+        let spots = 3;
+        let amt = 8;
+        for (let i = 0; i < spots; i++) {
+            let x = floor(random(width / 2 - stadium.size.width / 4, width / 2 + stadium.size.width / 4));
+            let y = floor(random(height / 4, height - height / 4));
+            for (let j = 0; j < amt; j++) {
+                let acc = randomParticleAcc(8);
+                let col = color(floor(random(0, 255)), floor(random(255)), floor(random(255)));
+                let size = floor(random(30, 40));
+                let p = new Particle(x, y, acc, size, col);
+                p.setLifespan(random(0.8, 1.4));
+                this.particles.push(p);
+            }
+        }
+    }
+
+    initFinalScreen(result) {
+        let txt = "You lost ...";
+        if (result == "win") {
+            txt = "You won!!!";
+
+            for (let i = 0; i < 3; i++) {
+                let time = floor(random(100, 800));
+                setTimeout(() => {
+                    this.confetti();
+                }, time);
+            }
+        }
+
+        let pt = new PopupText(
+            txt,
+            width / 2,
+            height / 2,
+            this.instructionsFontSize * 2.5,
+            color(config.settings.textColor)
+        );
+        pt.easing = "elastic";
+        pt.easeDuration = 1.4;
+
+        let pt2 = new PopupText(
+            "Tap to continue ...",
+            width / 2,
+            height - height / 3,
+            this.instructionsFontSize,
+            color(config.settings.textColor)
+        );
+        pt2.easing = "elastic";
+        pt2.easeDuration = 2;
+
+        this.particles.push(...[pt, pt2]);
     }
 
     drawFinalScreen() {
         stadium.draw();
-        noStroke();
-        fill(color(config.settings.textColor));
-        textAlign(CENTER, CENTER);
-        textSize(this.instructionsFontSize);
-        text(this.tournament.result, width / 2, height / 2);
     }
 
     endGame(result) {
         this.paused = true;
         this.tournament.result = result;
-        console.log(result);
+        this.initFinalScreen(result);
     }
 
     updateGame() {
@@ -1035,16 +1146,18 @@ class Game {
             if (this.player) {
                 this.player.update();
 
-                this.ballcd -= deltaTime / 1000;
-                if (this.ballcd < 0 && this.tournament.balls > 0) {
-                    this.ballcd = TimeGap;
-                    this.ball.throw();
-                    this.tournament.balls--;
-                    this.endRound = false;
-                }
+                if (!this.swappingPlayer && !this.settingMatch) {
+                    this.ballcd -= deltaTime / 1000;
+                    if (this.ballcd < 0 && this.tournament.balls > 0) {
+                        this.ballcd = TimeGap;
+                        this.ball.throw();
+                        this.tournament.balls--;
+                        this.endRound = false;
+                    }
 
-                if (this.tournament.balls == 0) {
-                    this.nextPlayer();
+                    if (this.tournament.balls == 0) {
+                        this.nextPlayer();
+                    }
                 }
             }
 
@@ -1054,16 +1167,20 @@ class Game {
         }
 
         if (this.player) {
-            this.player.draw();
+            this.player.draw(this.playerOffset);
         }
 
-        this.bat.draw();
+        this.bat.draw(this.playerOffset);
         this.ball.draw();
 
         this.scoreboard.draw(this);
 
         if (DEBUG) {
             // this.debugHUD();
+        }
+
+        if (this.settingMatch) {
+            this.drawMatchResult();
         }
     }
 
@@ -1078,28 +1195,80 @@ class Game {
             this.nextPlayer();
         }
 
-        if (this.tournament.score > this.tournament.againstScore) {
-            this.tournament.wins++;
-            console.log("won match");
+        if (!this.settingMatch) {
+            if (this.tournament.score >= this.tournament.againstScore) {
+                this.tournament.wins++;
+                console.log("won match");
 
-            if (this.tournament.wins > floor(Teams.length / 2)) {
-                this.endGame("win");
+                if (this.tournament.wins > floor(Teams.length / 2)) {
+                    this.endGame("win");
+                    return;
+                } else {
+                    this.initNewMatch("win");
+                }
+
                 return;
-            } else {
-                this.initMatch();
             }
 
-            return;
-        }
-
-        if (this.tournament.wickets == 0) {
-            console.log("lost match");
-            if (this.tournament.played - this.tournament.wins >= floor(Teams.length / 2)) {
-                this.endGame("lose");
-            } else {
-                this.initMatch();
+            if (this.tournament.wickets == 0) {
+                console.log("lost match");
+                if (this.tournament.played - this.tournament.wins >= floor(Teams.length / 2)) {
+                    this.endGame("lose");
+                } else {
+                    this.initNewMatch("lose");
+                }
             }
         }
+    }
+
+    initNewMatch(previousResult) {
+        if (!this.settingMatch) {
+            this.settingMatch = true;
+            setTimeout(() => {
+                this.initMatch();
+                this.settingMatch = false;
+                this.particles.length = 0;
+            }, NewMatchTimeout);
+
+            this.tournament.matchResult = previousResult;
+
+            let txt = "undefined";
+            if (previousResult == "win") {
+                txt = `You won against ${Teams[this.tournament.againstIndex].name}`;
+            } else if (previousResult == "lose") {
+                txt = `You lost against ${Teams[this.tournament.againstIndex].name}`;
+            }
+            let pt = new PopupText(
+                txt,
+                width / 2,
+                height / 2,
+                this.instructionsFontSize * 1.3,
+                color(config.settings.textColor)
+            );
+            pt.easeDuration = NewMatchTimeout / 2 / 1000;
+            pt.easing = "elastic";
+            this.particles.push(pt);
+
+            this.screenAlpha = 0;
+            shifty.tween({
+                from: {
+                    alpha: this.screenAlpha,
+                },
+                to: {
+                    alpha: 255,
+                },
+                duration: NewMatchTimeout / 4,
+                easing: "easeInQuad",
+                step: (state) => {
+                    this.screenAlpha = state.alpha;
+                },
+            });
+        }
+    }
+
+    drawMatchResult() {
+        stadium.draw();
+        noTint();
     }
 
     debugHUD() {
@@ -1225,7 +1394,7 @@ class Game {
 
         this.instructionsFontSize = height / 30;
         this.scoreFontSize = height / 20;
-        this.delayBeforeExit = 1.2;
+        this.delayBeforeExit = 0.6;
 
         // Don'1t touch these
         this.started = false;
@@ -1295,29 +1464,6 @@ class Game {
                 return !p.dead;
             });
 
-            // Animate instructions font size
-            // in and out
-            // if (this.instructionsFontSize - this.c_instructionsFontSize > 0.1 && !this.started) {
-            // this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, this.instructionsFontSize, 0.2);
-            // }
-
-            // if (this.c_instructionsFontSize > 0.1) {
-            // if (this.started) {
-            // this.c_instructionsFontSize = lerp(this.c_instructionsFontSize, 0, 0.4);
-            // }
-
-            // (NORMAL);
-            // noStroke();
-            // fill(color(config.settings.textColor));
-            // textFont(config.preGameScreen.fontFamily);
-            // textSize(this.c_instructionsFontSize);
-            // textAlign(CENTER);
-
-            // text(config.settings.instructions1, width / 2, height / 10);
-            // text(config.settings.instructions2, width / 2, (height / 10) * 1.5);
-            // text(config.settings.instructions3, width / 2, (height / 10) * 2);
-            // }
-
             if (this.started) {
                 this.c_scoreFontSize = lerp(this.c_scoreFontSize, this.scoreFontSize, 0.2);
 
@@ -1330,11 +1476,15 @@ class Game {
                 text(this.score, width / 2, height / 6);
             }
 
-            if (this.finished) {
+            if (this.tournament.result) {
                 this.delayBeforeExit -= deltaTime / 1000;
+                this.finished = true;
 
                 if (this.delayBeforeExit < 0) {
-                    window.setEndScreenWithScore(this.score);
+                    if (this.lastPress && !mouseIsPressed) {
+                        window.setEndScreenWithScore(100);
+                    }
+                    this.lastPress = mouseIsPressed;
                 }
             }
         }
@@ -1372,6 +1522,53 @@ function randomPointInCircle(x, y, r) {
     let x_ = x + cos(a) * r_;
     let y_ = y + sin(a) * r_;
     return createVector(x_, y_);
+}
+
+class PopupText {
+    constructor(text, x, y, size, color) {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.startSize = 0;
+        this.c_size = this.startSize;
+        this.size = size;
+        this.color = color;
+        this.easeDuration = 1;
+        this.easing = "easeInQuad";
+        this.startEase = false;
+        this.font = "Arial";
+        this.style = NORMAL;
+        this.vAlign = CENTER;
+        this.hAlign = CENTER;
+        this.dead = false;
+    }
+
+    draw() {
+        if (!this.startEase) {
+            this.startEase = true;
+            shifty.tween({
+                from: {
+                    size: this.startSize,
+                },
+                to: {
+                    size: this.size,
+                },
+                duration: this.easeDuration * 1000,
+                easing: this.easing,
+                step: (state) => {
+                    this.c_size = state.size;
+                },
+            });
+        }
+
+        noStroke();
+        fill(this.color);
+        textAlign(this.vAlign, this.hAlign);
+        textStyle(this.style);
+        textFont(this.font);
+        textSize(this.c_size);
+        text(this.text, this.x, this.y);
+    }
 }
 
 class FloatingText {
