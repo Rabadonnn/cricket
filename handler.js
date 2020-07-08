@@ -87,8 +87,17 @@ function loadImages() {
     window.images.cricketBall = loadImage(config.settings.cricketBall);
     window.images.cricketBat = loadImage(config.settings.cricketBat);
 
+    window.images.player = {
+        leg: loadImage("assets/player_leg.png"),
+        body: loadImage("assets/player_body.png"),
+        cap: loadImage("assets/player_cap.png"),
+    };
+
     window.images.teamLogos = {};
     window.images.playerHeads = {};
+    window.images.playerBodies = {};
+    window.images.playerCaps = {};
+    window.images.playerLegs = {};
 
     for (let [key, value] of Object.entries(config.settings.teams)) {
         window.images.teamLogos[value.name] = loadImage(value.logo);
@@ -98,13 +107,27 @@ function loadImages() {
         }
     }
 
-    window.images.player = {
-        leg: loadImage("assets/player_leg.png"),
-        body: loadImage("assets/player_body.png"),
-        cap: loadImage("assets/player_cap.png"),
-    };
+    console.log(window.images.player.cap);
 
     window.images.wickets = loadImage("assets/cricket_wickets.png");
+}
+
+function loadPlayerImages() {
+    for (let [key, value] of Object.entries(config.settings.teams)) {
+        for (let [key2, value2] of Object.entries(value.players)) {
+            window.images.playerCaps[value2.name] = createColoredImage(window.images.player.cap, color(value2.cap));
+            window.images.playerLegs[value2.name] = createColoredImage(window.images.player.leg, color(value2.legs));
+            window.images.playerBodies[value2.name] = createColoredImage(window.images.player.body, color(value2.body));
+        }
+    }
+}
+
+function createColoredImage(img, col) {
+    let newimg = createGraphics(img.width, img.height);
+    newimg.imageMode(CORNER);
+    newimg.tint(col);
+    newimg.image(img, 0, 0);
+    return newimg;
 }
 
 function loadSounds() {
@@ -130,6 +153,7 @@ function loadGoogleFont() {
 
 window.setup = function () {
     createCanvas(window.innerWidth, window.innerHeight);
+    loadPlayerImages();
     game = new Game();
 };
 

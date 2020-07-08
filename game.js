@@ -506,7 +506,6 @@ class BodyPart {
         this.pos = createVector(0, 0);
         this.pivot = createVector(0, 0);
         this.offset = createVector(0, 0);
-        this.color = color("#ffffff");
 
         this.calculateSize();
     }
@@ -524,7 +523,6 @@ class BodyPart {
         scale(this.scale.x, this.scale.y);
         rotate(this.rotation);
         imageMode(CENTER);
-        tint(this.color);
         image(this.img, -this.pivot.x, -this.pivot.y, this.actualSize.width, this.actualSize.height);
         imageMode(CORNER);
         pop();
@@ -537,15 +535,14 @@ class Player {
 
         this.player = player;
 
-        this.legImg = window.images.player.leg;
-        this.capImg = window.images.player.cap;
-        this.bodyImg = window.images.player.body;
+        this.capImg = window.images.playerCaps[this.name];
+        this.legImg = window.images.playerLegs[this.name];
+        this.bodyImg = window.images.playerBodies[this.name];
 
         this.headImg = player.head;
         this.name = player.name;
         this.bodyColor = player.body;
         this.legsColor = player.legs;
-        this.capColor = player.cap;
 
         this.setupParts();
         this.setupAnimations();
@@ -597,7 +594,6 @@ class Player {
             center.y - this.body.actualSize.height * 0.95
         );
         this.cap.size = createVector(this.body.size.x * 0.9, this.body.size.y * 0.9);
-        this.cap.color = this.capColor;
         this.cap.rotation = radians(-15);
         this.cap.calculateSize();
     }
@@ -808,6 +804,7 @@ class Game {
             let n;
             let w;
             if (i == 0) {
+
                 n = 2;
                 w = 3;
             }
@@ -1284,7 +1281,6 @@ class Game {
 
     drawMatchResult() {
         stadium.draw();
-        noTint();
     }
 
     debugHUD() {

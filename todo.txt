@@ -30,3 +30,5 @@
 [] sounds
 
 [*] player swap animation
+
+[*] performance increase tint images in setup instead of runtime
