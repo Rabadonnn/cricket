@@ -1035,7 +1035,7 @@ class Game {
                     offset: width / 2,
                 },
                 easing: "easeOutQuad",
-                duration: 700,
+                duration: 500,
                 step: (state) => {
                     this.playerOffset.x = state.offset;
                 },
