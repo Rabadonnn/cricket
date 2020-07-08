@@ -771,19 +771,38 @@ class Game {
             this.paused = !this.paused;
         });
 
+        let rowLength = 4;
+        let teamCount = Teams.length;
+        let rows = ceil(teamCount / rowLength);
+
         let step = ButtonSize + ButtonOffset;
-        let sx = width / 2 - (Teams.length / 2) * step + ButtonOffset / 2;
-        let y = height / 3;
+        let sx = width / 2 - (rowLength / 2) * step + ButtonOffset / 2;
+        let sy = height / 3;
 
-        for (let i = 0; i < Teams.length; i++) {
-            let x = sx + step * i;
+        let teamIndex = 0;
 
-            let data = Teams[i];
-            this.teamButtons.push(
-                new TeamButton(x, y, data, () => {
-                    this.tournament.teamIndex = i;
-                })
-            );
+        for (let j = 0; j < rows; j++) {
+
+            let els = rowLength;
+            if (j == rows - 1) {
+                els = teamCount - (rows - 1) * rowLength;
+            }
+            let y = sy + j * step * 1.5;
+            let sx = width / 2 - (els / 2) * step + ButtonOffset / 2;
+
+            for (let i = 0; i < rowLength; i++) {
+                if (teamIndex < teamCount) {
+                    let x = sx + step * i;
+
+                    let data = Teams[teamIndex];
+                    this.teamButtons.push(
+                        new TeamButton(x, y, data, () => {
+                            this.tournament.teamIndex = teamIndex;
+                        })
+                    );
+                    teamIndex++;
+                }
+            }
         }
 
         sx = width / 2 - (3 / 2) * step + ButtonOffset / 2;
@@ -804,7 +823,7 @@ class Game {
                 w = 6;
             }
             this.overButtons.push(
-                new OverButton(x, y, n, () => {
+                new OverButton(x, sy, n, () => {
                     if (!this.overCount) {
                         this.tournament.maxOvers = n;
                         this.tournament.maxWickets = w;
