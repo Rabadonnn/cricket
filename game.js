@@ -779,10 +779,7 @@ class Game {
         let sx = width / 2 - (rowLength / 2) * step + ButtonOffset / 2;
         let sy = height / 3;
 
-        let teamIndex = 0;
-
         for (let j = 0; j < rows; j++) {
-
             let els = rowLength;
             if (j == rows - 1) {
                 els = teamCount - (rows - 1) * rowLength;
@@ -790,18 +787,18 @@ class Game {
             let y = sy + j * step * 1.5;
             let sx = width / 2 - (els / 2) * step + ButtonOffset / 2;
 
-            for (let i = 0; i < rowLength; i++) {
-                if (teamIndex < teamCount) {
-                    let x = sx + step * i;
+            for (let i = 0; i < els; i++) {
+                let x = sx + step * i;
 
-                    let data = Teams[teamIndex];
-                    this.teamButtons.push(
-                        new TeamButton(x, y, data, () => {
-                            this.tournament.teamIndex = teamIndex;
-                        })
-                    );
-                    teamIndex++;
-                }
+                let index = j * rowLength + i;
+
+                let data = Teams[index];
+
+                this.teamButtons.push(
+                    new TeamButton(x, y, data, () => {
+                        this.tournament.teamIndex = index;
+                    })
+                );
             }
         }
 

@@ -14,9 +14,9 @@
 [] maybe some particles when hitting the ball so it would look better
 
 [*] player images - be white with gray details
-[] edit player assets, make them more professional
+[*] edit player assets, make them more professional
 [*] player animation - will scale and rotate every part of his body, won't need to be complicated
-[] maybe edit the player animation a bit
+[*] maybe edit the player animation a bit
 [*] player customization - will use p5 tint()
 
 [*] change player when wicket falls
@@ -29,4 +29,4 @@
 [*] secondary background image
 [] sounds
 
-[] player swap animation
+[*] player swap animation
