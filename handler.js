@@ -108,6 +108,12 @@ function loadImages() {
     }
 
     window.images.wickets = loadImage("assets/cricket_wickets.png");
+
+    window.images.billboard = loadImage("assets/billboard.png");
+
+    window.images.ad = loadImage(config.settings.ad);
+
+    window.images.xSign = loadImage("assets/x_sign.png");
 }
 
 function loadPlayerImages() {
@@ -153,6 +159,9 @@ function loadGoogleFont() {
 window.setup = function () {
     createCanvas(window.innerWidth, window.innerHeight);
     loadPlayerImages();
+
+    window.images.coloredWickets = createColoredImage(window.images.wickets, config.settings.wickets)
+
     game = new Game();
 };
 
@@ -165,7 +174,9 @@ window.draw = function () {
         }
     } catch (err) {}
 
-    game.draw();
+    // if (focused) {
+        game.draw();
+    // }
 };
 
 window.windowResized = () => {

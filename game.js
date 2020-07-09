@@ -2,11 +2,13 @@ let config = require("visual-config-exposer").default;
 
 const DEBUG = true;
 
+const MOBILE = window.mobile() || window.innerWidth < 500 || window.innerHeight < 500;
+
 let Teams;
 const ChooseTeamText = "Choose your team";
 const ChooseOversText = "Choose overs";
 
-const ButtonSize = 80;
+const ButtonSize = MOBILE ? 70 : 80;
 const ButtonOffset = 25;
 
 const TeamSquareStroke = 255;
@@ -23,7 +25,7 @@ let BallMinX;
 let BallMaxX;
 const BallSize = 100;
 
-const BatSize = 160;
+const BatSize = MOBILE ? 120 : 150;
 let BatPos;
 let MaxBatAngle;
 let BatAngle;
@@ -214,20 +216,18 @@ const stadium = {
         stadium.img = window.images.stadium;
         stadium.size = calculateAspectRatioFit(stadium.img.width, stadium.img.height, width, height);
 
-        wickets.img = window.images.wickets;
+        wickets.img = window.images.coloredWickets;
         wickets.x = width / 2;
         wickets.y = (stadium.size.height / 2) * 1.2;
-        wickets.size = calculateAspectRatioFit(wickets.img.width, wickets.img.height, 90, 90);
-        wickets.color = color(config.settings.wickets);
+        let wicketSize = MOBILE ? 70 : 90;
+        wickets.size = calculateAspectRatioFit(wickets.img.width, wickets.img.height, wicketSize, wicketSize);
     },
     draw: () => {
         imageMode(CENTER);
 
         image(stadium.img, stadium.x, stadium.y, stadium.size.width, stadium.size.height);
 
-        tint(wickets.color);
         image(wickets.img, wickets.x, wickets.y, wickets.size.width, wickets.size.height);
-        noTint();
         imageMode(CORNER);
     },
 };
@@ -380,7 +380,7 @@ class Ball {
     checkBat(bat) {
         if (this.canBeHit && bat.canHit && !this.beenHit) {
             this.vel.z *= -1.3;
-            let vx = map(this.vel.z, this.minsz, this.maxsz, 25, 40);
+            let vx = map(this.vel.z, this.minsz, this.maxsz, 30, 50);
             this.vel.x = vx;
             this.beenHit = true;
             let score = map(this.distTilTarget, 1, 9, 6, 1);
@@ -395,6 +395,10 @@ class Ball {
 class ScoreBoard {
     constructor() {
         this.textSize = 25;
+        if (MOBILE) {
+            this.textSize = 18;
+        }
+
         this.font = config.preGameScreen.fontFamily;
 
         this.height = 70;
@@ -450,8 +454,11 @@ class ScoreBoard {
 class PauseButton extends TeamButton {
     constructor(onPress) {
         let size = 45;
+        if (MOBILE) {
+            size = 35;
+        }
         let x = width - size;
-        let y = size;
+        let y = height / 2 - stadium.size.height / 2 + size * 0.7;
         super(x, y, null, onPress);
 
         this.rect = Rectangle.FromPosition(x, y, size);
@@ -460,15 +467,17 @@ class PauseButton extends TeamButton {
         this.hoverRect.cornerRadius = 12;
 
         this.size = size;
+
+        this.strokeWeight = MOBILE ? 3 : 5;
     }
 
     draw() {
-        strokeWeight(5);
+        strokeWeight(this.strokeWeight);
         stroke(0);
         fill(255);
         if (this.hover) {
             this.hoverRect.draw();
-            strokeWeight(8);
+            strokeWeight(this.strokeWeight + 3);
             line(
                 this.hoverRect.x + this.hoverRect.w * 0.3,
                 this.hoverRect.y + this.hoverRect.h * 0.3,
@@ -553,7 +562,10 @@ class Player {
 
     setupParts() {
         let center = createVector(width / 2 + (stadium.size.width / 3) * 0.65, BatPos.y - BatSize * 0.2);
-        let mainSize = 100;
+        let mainSize = 90;
+        if (MOBILE) {
+            mainSize = 80;
+        }
 
         this.body = new BodyPart(this.bodyImg);
         this.body.size = createVector(mainSize, mainSize);
@@ -756,6 +768,53 @@ class TeamPlayer {
     }
 }
 
+class Billboard {
+    constructor() {
+        this.img = window.images.billboard;
+        this.color = color(config.settings.billboardColor);
+        let rectSize = stadium.size.width * 0.7;
+        this.size = calculateAspectRatioFit(this.img.width, this.img.height, rectSize, rectSize);
+        this.pos = createVector(width / 2, height / 4);
+        this.rect = Rectangle.FromPosition(this.pos.x, this.pos.y, this.size.width, this.size.height);
+
+        let adRect = Rectangle.FromPosition(this.pos.x, this.pos.y, this.size.width * 0.8, this.size.height * 0.8);
+
+        this.ad = new Ad(window.images.ad, adRect);
+    }
+
+    draw() {
+        noStroke();
+        fill(this.color);
+        this.rect.draw();
+
+        push();
+        translate(this.pos.x, this.pos.y);
+        imageMode(CENTER);
+        image(this.img, 0, 0, this.rect.w, this.rect.h);
+        imageMode(CORNER);
+        pop();
+
+        this.ad.draw();
+    }
+}
+
+class Ad {
+    constructor(img, rect) {
+        this.img = img;
+        this.maxRect = rect;
+        this.size = calculateAspectRatioFit(this.img.width, this.img.height, this.maxRect.w, this.maxRect.h);
+    }
+
+    draw() {
+        push();
+        translate(this.maxRect.center().x, this.maxRect.center().y);
+        imageMode(CENTER);
+        image(this.img, 0, 0, this.size.width, this.size.height);
+        imageMode(CORNER);
+        pop();
+    }
+}
+
 class Game {
     constructor() {
         this.defaults();
@@ -768,6 +827,7 @@ class Game {
         this.overButtons = [];
         this.pauseButton = new PauseButton(() => {
             this.paused = !this.paused;
+            this.ballcd = TimeGap;
         });
 
         let rowLength = 4;
@@ -856,6 +916,17 @@ class Game {
         this.firstVsScreen = true;
 
         this.playerOffset = createVector(0, 0);
+
+        this.billboard = new Billboard();
+    }
+
+    addXParticle() {
+        let pi = new PopupImage(window.images.xSign, width / 2, height / 2, 150);
+        pi.easeInEasing = "elastic";
+        pi.easeOutDuration = 0.1;
+        pi.easeInDuration = 0.7;
+        pi.duration = 0;
+        this.particles.push(pi);
     }
 
     calculateAgainstScore() {
@@ -887,6 +958,9 @@ class Game {
         this.vs_t2 = Teams[this.tournament.againstIndex];
 
         let size = 100;
+        if (MOBILE) {
+            size = 80;
+        }
         this.vs_size1 = calculateAspectRatioFit(this.vs_t1.logo.width, this.vs_t1.logo.height, size, size);
         this.vs_size2 = calculateAspectRatioFit(this.vs_t2.logo.width, this.vs_t2.logo.height, size, size);
 
@@ -894,6 +968,11 @@ class Game {
 
         this.teamFontSize = 30;
         this.vsFontSize = 45;
+
+        if (MOBILE) {
+            this.teamFontSize = 25;
+            this.vsFontSize = 40;
+        }
 
         this.paused = true;
 
@@ -1007,7 +1086,7 @@ class Game {
                 text("Paused", width / 2, height / 2);
             }
 
-            if (this.chose && !this.tournament.result) {
+            if (this.chose && !this.drawVs && !this.tournament.result) {
                 this.pauseButton.update();
                 this.pauseButton.draw();
             }
@@ -1039,6 +1118,7 @@ class Game {
 
         this.initPlayerSwapAnim();
         playSound(window.sounds.whistle);
+        this.addXParticle();
     }
 
     initPlayerSwapAnim() {
@@ -1096,6 +1176,11 @@ class Game {
 
     initFinalScreen(result) {
         let txt = "You lost ...";
+
+        if (result == "lose") {
+            playSound(window.sounds.whistle);
+        }
+
         if (result == "win") {
             txt = "You won!!!";
 
@@ -1114,8 +1199,8 @@ class Game {
             this.instructionsFontSize * 2.5,
             color(config.settings.textColor)
         );
-        pt.easing = "elastic";
-        pt.easeDuration = 1.4;
+        pt.easing = "bounce";
+        pt.easeDuration = 1;
 
         let pt2 = new PopupText(
             "Tap to continue ...",
@@ -1182,13 +1267,15 @@ class Game {
             }
         }
 
-        if (!this.settingMatch) {
+        if (!this.settingMatch && !this.drawVs) {
             if (this.player) {
                 this.player.draw(this.playerOffset);
             }
 
             this.bat.draw(this.playerOffset);
             this.ball.draw();
+
+            this.billboard.draw();
 
             this.scoreboard.draw(this);
         }
@@ -1370,7 +1457,13 @@ class Game {
     }
 
     onMousePress() {
-        if (this.chose && mouseX > width / 2 - stadium.size.width / 2 && mouseX < width / 2 + stadium.size.width / 2) {
+        if (
+            !this.drawVs &&
+            this.chose &&
+            mouseX > width / 2 - stadium.size.width / 2 &&
+            mouseX < width / 2 + stadium.size.width / 2 &&
+            !this.pauseButton.rect.includes(createVector(mouseX, mouseY))
+        ) {
             this.bat.onMousePress();
         }
         // console.log(this.ball.pos.z);
@@ -1466,25 +1559,13 @@ class Game {
                 return !p.dead;
             });
 
-            if (this.started) {
-                this.c_scoreFontSize = lerp(this.c_scoreFontSize, this.scoreFontSize, 0.2);
-
-                textStyle(NORMAL);
-                noStroke();
-                fill(color(config.settings.textColor));
-                textAlign(CENTER);
-                textSize(this.c_scoreFontSize);
-                textFont(config.preGameScreen.fontFamily);
-                text(this.score, width / 2, height / 6);
-            }
-
             if (this.tournament.result) {
                 this.delayBeforeExit -= deltaTime / 1000;
                 this.finished = true;
 
                 if (this.delayBeforeExit < 0) {
                     if (this.lastPress && !mouseIsPressed) {
-                        window.setEndScreenWithScore(100);
+                        window.setEndScreenWithScore();
                     }
                     this.lastPress = mouseIsPressed;
                 }
@@ -1524,6 +1605,95 @@ function randomPointInCircle(x, y, r) {
     let x_ = x + cos(a) * r_;
     let y_ = y + sin(a) * r_;
     return createVector(x_, y_);
+}
+
+class PopupImage {
+    constructor(img, x, y, size) {
+        this.img = img;
+        this.x = x;
+        this.y = y;
+
+        this.minScale = 0;
+        this.maxScale = 1;
+        this.scale = this.minScale;
+
+        this.rotation = 0;
+        this.rawSize = size;
+        this.size = calculateAspectRatioFit(this.img.width, this.img.height, size, size);
+
+        this.inEase = false;
+        this.outEase = false;
+
+        this.easeInDuration = 1;
+        this.easeOutDuration = 1;
+        this.duration = 1;
+
+        this.easeInEasing = "easeInQuad";
+        this.easeOutEasing = "easeOutQuad";
+
+        this.dead = false;
+
+        this.canDrain = false;
+    }
+
+    draw() {
+        if (!this.inEase) {
+            this.inEase = true;
+            shifty
+                .tween({
+                    from: {
+                        scale: this.minScale,
+                    },
+                    to: {
+                        scale: this.maxScale,
+                    },
+                    easing: this.easeInEasing,
+                    duration: this.easeInDuration * 1000,
+                    step: (state) => {
+                        this.scale = state.scale;
+                    },
+                })
+                .then(() => {
+                    this.canDrain = true;
+                });
+        }
+
+        if (this.canDrain) {
+            this.duration -= deltaTime / 1000;
+
+            if (this.duration <= 0 && !this.outEase) {
+                this.canDrain = false;
+
+                this.outEase = true;
+
+                shifty
+                    .tween({
+                        from: {
+                            scale: this.maxScale,
+                        },
+                        to: {
+                            scale: this.minScale,
+                        },
+                        easing: this.easeOutEasing,
+                        duration: this.easeOutDuration * 1000,
+                        step: (state) => {
+                            this.scale = state.scale;
+                        },
+                    })
+                    .then(() => {
+                        this.dead = true;
+                    });
+            }
+        }
+
+        push();
+        translate(this.x, this.y);
+        scale(this.scale);
+        imageMode(CENTER);
+        image(this.img, 0, 0, this.size.width, this.size.height);
+        imageMode(CORNER);
+        pop();
+    }
 }
 
 class PopupText {

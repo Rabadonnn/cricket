@@ -227,6 +227,16 @@
                     "type": "image"
                 },
                 {
+                    "key": "billboardColor",
+                    "header": "Billboard image color",
+                    "type": "color"
+                },
+                {
+                    "key": "ad",
+                    "header": "Billboard ad",
+                    "type": "image"
+                },
+                {
                     "key": "ballHit",
                     "header": "Ball hit sound",
                     "type": "sound"
@@ -452,6 +462,8 @@
             "wickets": "#e8dfc5",
             "cricketBall": "assets/cricket_ball.png",
             "cricketBat": "assets/cricket_bat.png",
+            "billboardColor": "#ffffff",
+            "ad": "assets/ad.png",
             "ballHit": "assets/ball_hit.wav",
             "whistle": "assets/whistle.wav",
             "ballThrow": "assets/ball_throw.wav",

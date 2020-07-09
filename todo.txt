@@ -4,7 +4,6 @@
 [*] stadium image implementation
 
 [*] floating bat - white with gray details
-[*] floating bat implementation
 
 [*] bat and ball collision
 [] bat and ball collision response
@@ -32,5 +31,9 @@
 [*] player swap animation
 
 [] billboards
+
+[] mobile responsiveness
+
+[] score generation
 
 [*] performance increase tint images in setup instead of runtime
