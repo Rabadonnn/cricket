@@ -365,6 +365,8 @@ class Ball {
         sx *= 0.015;
         this.vel = createVector(sx, 0, sz);
 
+        playSound(window.sounds.ballThrow);
+
         if (DEBUG) {
             // console.log("Ball vel", this.vel);
         }
@@ -384,6 +386,7 @@ class Ball {
             let score = map(this.distTilTarget, 1, 9, 6, 1);
             score = floor(score);
             score = constrain(score, 1, 6);
+            playSound(window.sounds.ballHit);
             return score;
         }
     }
@@ -804,7 +807,6 @@ class Game {
             let n;
             let w;
             if (i == 0) {
-
                 n = 2;
                 w = 3;
             }
@@ -1036,6 +1038,7 @@ class Game {
         this.swappingPlayer = true;
 
         this.initPlayerSwapAnim();
+        playSound(window.sounds.whistle);
     }
 
     initPlayerSwapAnim() {
@@ -1179,14 +1182,16 @@ class Game {
             }
         }
 
-        if (this.player) {
-            this.player.draw(this.playerOffset);
+        if (!this.settingMatch) {
+            if (this.player) {
+                this.player.draw(this.playerOffset);
+            }
+
+            this.bat.draw(this.playerOffset);
+            this.ball.draw();
+
+            this.scoreboard.draw(this);
         }
-
-        this.bat.draw(this.playerOffset);
-        this.ball.draw();
-
-        this.scoreboard.draw(this);
 
         if (DEBUG) {
             // this.debugHUD();
@@ -1261,21 +1266,6 @@ class Game {
             pt.easeDuration = NewMatchTimeout / 2 / 1000;
             pt.easing = "elastic";
             this.particles.push(pt);
-
-            this.screenAlpha = 0;
-            shifty.tween({
-                from: {
-                    alpha: this.screenAlpha,
-                },
-                to: {
-                    alpha: 255,
-                },
-                duration: NewMatchTimeout / 4,
-                easing: "easeInQuad",
-                step: (state) => {
-                    this.screenAlpha = state.alpha;
-                },
-            });
         }
     }
 

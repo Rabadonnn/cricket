@@ -107,8 +107,6 @@ function loadImages() {
         }
     }
 
-    console.log(window.images.player.cap);
-
     window.images.wickets = loadImage("assets/cricket_wickets.png");
 }
 
@@ -132,8 +130,9 @@ function createColoredImage(img, col) {
 
 function loadSounds() {
     window.sounds.theme = loadSound(config.settings.theme);
-    window.sounds.tap = loadSound(config.settings.tap);
-    window.sounds.lose = loadSound(config.settings.lose);
+    window.sounds.ballHit = loadSound(config.settings.ballHit);
+    window.sounds.ballThrow = loadSound(config.settings.ballThrow);
+    window.sounds.whistle = loadSound(config.settings.whistle);
 }
 
 window.preload = function () {

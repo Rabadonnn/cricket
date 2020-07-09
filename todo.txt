@@ -31,4 +31,6 @@
 
 [*] player swap animation
 
+[] billboards
+
 [*] performance increase tint images in setup instead of runtime

@@ -227,18 +227,23 @@
                     "type": "image"
                 },
                 {
-                    "key": "tap",
-                    "header": "Tap sound effect",
+                    "key": "ballHit",
+                    "header": "Ball hit sound",
+                    "type": "sound"
+                },
+                {
+                    "key": "ballThrow",
+                    "header": "Ball throw sounds",
+                    "type": "sound"
+                },
+                {
+                    "key": "whistle",
+                    "header": "assets/whistle.wav",
                     "type": "sound"
                 },
                 {
                     "key": "theme",
                     "header": "Background Music",
-                    "type": "sound"
-                },
-                {
-                    "key": "lose",
-                    "header": "Lose sound effect",
                     "type": "sound"
                 },
                 {
@@ -447,10 +452,11 @@
             "wickets": "#e8dfc5",
             "cricketBall": "assets/cricket_ball.png",
             "cricketBat": "assets/cricket_bat.png",
+            "ballHit": "assets/ball_hit.wav",
+            "whistle": "assets/whistle.wav",
+            "ballThrow": "assets/ball_throw.wav",
             "theme": "assets/theme.mp3",
-            "volume": "0.7",
-            "tap": "assets/tap.wav",
-            "lose": "assets/lose.wav"
+            "volume": "0.3"
         },
         "postGameScreen": {
             "scoreText": "Your score is: ",
