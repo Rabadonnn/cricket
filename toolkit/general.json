@@ -227,6 +227,11 @@
                     "type": "image"
                 },
                 {
+                    "key": "batColor",
+                    "header": "Bat color",
+                    "type": "color"
+                },
+                {
                     "key": "billboardColor",
                     "header": "Billboard image color",
                     "type": "color"
@@ -462,6 +467,7 @@
             "wickets": "#e8dfc5",
             "cricketBall": "assets/cricket_ball.png",
             "cricketBat": "assets/cricket_bat.png",
+            "batColor": "#ffffff",
             "billboardColor": "#ffffff",
             "ad": "assets/ad.png",
             "ballHit": "assets/ball_hit.wav",

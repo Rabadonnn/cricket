@@ -85,7 +85,7 @@ function loadImages() {
     window.images.background = loadImage(config.preGameScreen["backgroundImage"]);
     window.images.stadium = loadImage(config.settings.stadium);
     window.images.cricketBall = loadImage(config.settings.cricketBall);
-    window.images.cricketBat = loadImage(config.settings.cricketBat);
+    window.images.bat = loadImage(config.settings.cricketBat);
 
     window.images.player = {
         leg: loadImage("assets/player_leg.png"),
@@ -161,6 +161,7 @@ window.setup = function () {
     loadPlayerImages();
 
     window.images.coloredWickets = createColoredImage(window.images.wickets, config.settings.wickets)
+    window.images.cricketBat = createColoredImage(window.images.bat, color(config.settings.batColor));
 
     game = new Game();
 };
