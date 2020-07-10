@@ -354,9 +354,9 @@ class Ball {
         let x = 0;
         let r = random(100);
         if (r < 33) {
-            x = -stadium.size.width / 2;
+            x = floor(random(-stadium.size.width / 2, -stadium.size.width / 4));
         } else if (r < 66) {
-            x = stadium.size.width / 2;
+            x = floor(random(stadium.size.width / 2, stadium.size.width / 4));
         }
         this.pos.x = x;
 
@@ -374,7 +374,7 @@ class Ball {
 
     get canBeHit() {
         this.distTilTarget = abs(this.drawPos.y - BallTarget.y);
-        return this.distTilTarget < 10;
+        return this.distTilTarget < 15;
     }
 
     checkBat(bat) {
@@ -931,22 +931,10 @@ class Game {
 
     calculateAgainstScore() {
         let maxScore = this.tournament.maxOvers * BallsPerOver * 6;
-        let minScore = maxScore * 0.3;
-        let avgScore = maxScore * 0.6;
-        let veryGoodScore = maxScore * 0.8;
 
-        let r = random(100);
-        let score;
-        if (r < 60) {
-            score = floor(random(minScore, avgScore * 1.1));
-        } else if (r < 90) {
-            score = floor(random(avgScore, veryGoodScore));
-        } else {
-            score = floor(random(avgScore, maxScore));
-        }
+        let avgScore = maxScore * 0.3;
 
-        return 10;
-        // return score;
+        return floor(random(avgScore * 0.8, avgScore * 1.3));
     }
 
     initVsScreen() {
@@ -982,7 +970,7 @@ class Game {
     drawVsScreen() {
         stadium.draw();
 
-        if (this.canAnim && this.c_vsScreenCd < 0.5) {
+        if (this.canAnim && this.c_vsScreenCd < 0.3) {
             this.canAnim = false;
             shifty.tween({
                 from: {
@@ -1107,7 +1095,7 @@ class Game {
         }
     }
 
-    nextPlayer() {
+    nextPlayer(showX = true) {
         this.tournament.currentPlayerIndex++;
 
         if (this.tournament.currentPlayerIndex - 1 == Teams[this.tournament.teamIndex].players.length - 1) {
@@ -1116,9 +1104,14 @@ class Game {
 
         this.swappingPlayer = true;
 
+        this.resetBalls();
+
         this.initPlayerSwapAnim();
-        playSound(window.sounds.whistle);
-        this.addXParticle();
+
+        if (showX) {
+            playSound(window.sounds.whistle);
+            this.addXParticle();
+        }
     }
 
     initPlayerSwapAnim() {
@@ -1255,10 +1248,6 @@ class Game {
                         this.tournament.balls--;
                         this.endRound = false;
                     }
-
-                    if (this.tournament.balls == 0) {
-                        this.nextPlayer();
-                    }
                 }
             }
 
@@ -1296,8 +1285,9 @@ class Game {
             this.nextPlayer();
         }
 
-        if (this.tournament.balls == 0) {
-            this.nextPlayer();
+        if (this.tournament.balls == 0 && !this.endRound && (this.ball.passedTarget || this.ball.beenHit)) {
+            this.nextPlayer(false);
+            this.endRound = true;
         }
 
         if (!this.settingMatch) {
@@ -1318,6 +1308,7 @@ class Game {
             if (this.tournament.wickets == 0) {
                 console.log("lost match");
                 if (this.tournament.played - this.tournament.wins >= floor(Teams.length / 2)) {
+                    this.particles.length = 0;
                     this.endGame("lose");
                 } else {
                     this.initNewMatch("lose");
@@ -1447,7 +1438,7 @@ class Game {
 
     resetBalls() {
         this.tournament.balls = this.tournament.maxOvers * BallsPerOver;
-        console.log("Resetting balls and wickets");
+        console.log("Resetting balls");
     }
 
     makePlayer(teamIndex, playerIndex) {

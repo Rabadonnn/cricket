@@ -177,6 +177,14 @@ window.draw = function () {
 
     // if (focused) {
         game.draw();
+    // } else {
+        // fill(255);
+        // rect(0, 0, width, height);
+        // noStroke();
+        // textSize(20);
+        // textAlign(CENTER, CENTER);
+        // fill(0);
+        // text("Tap the screen ...", width / 2, height / 2);
     // }
 };
 
