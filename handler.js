@@ -30,7 +30,7 @@ let PostGameScreen = require("./postgame").postGameScreen;
 // Load google font from config
 WebFont.load({
     google: {
-        families: [config.preGameScreen.fontFamily],
+        families: [config.preGameScreen.fontFamily, config.settings.scoreboardFont]
     },
 });
 
@@ -61,10 +61,9 @@ window.restartGame = () => {
     try {
         if (window.soundEnabled) {
             window.sounds.theme.setLoop(true);
-            window.sounds.theme.setVolume(parseFloat(config.settings.volume));
             window.sounds.theme.play();
         }
-    } catch (err) {}
+    } catch (err) { }
 
     window.setScreen("gameScreen");
 };
@@ -114,6 +113,8 @@ function loadImages() {
     window.images.ad = loadImage(config.settings.ad);
 
     window.images.xSign = loadImage("assets/x_sign.png");
+
+    window.images.scoreboardBackground = loadImage(config.settings.scoreboardImage);
 }
 
 function loadPlayerImages() {
@@ -160,8 +161,10 @@ window.setup = function () {
     createCanvas(window.innerWidth, window.innerHeight);
     loadPlayerImages();
 
-    window.images.coloredWickets = createColoredImage(window.images.wickets, config.settings.wickets)
+    window.images.coloredWickets = createColoredImage(window.images.wickets, config.settings.wickets);
     window.images.cricketBat = createColoredImage(window.images.bat, color(config.settings.batColor));
+
+    window.sounds.theme.setVolume(parseFloat(config.settings.volume));
 
     game = new Game();
 };
@@ -169,23 +172,13 @@ window.setup = function () {
 window.draw = function () {
     try {
         if (window.currentScreen != "gameScreen" && window.sounds.theme.isPlaying()) {
-            window.sounds.theme.stop();
+            window.sounds.theme.pause();
         } else if (window.currentScreen == "gameScreen" && !window.sounds.theme.isPlaying() && window.soundEnabled) {
             window.sounds.theme.play();
         }
-    } catch (err) {}
+    } catch (err) { }
 
-    // if (focused) {
-        game.draw();
-    // } else {
-        // fill(255);
-        // rect(0, 0, width, height);
-        // noStroke();
-        // textSize(20);
-        // textAlign(CENTER, CENTER);
-        // fill(0);
-        // text("Tap the screen ...", width / 2, height / 2);
-    // }
+    game.draw();
 };
 
 window.windowResized = () => {

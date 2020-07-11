@@ -1,6 +1,6 @@
 let config = require("visual-config-exposer").default;
 
-const DEBUG = true;
+const DEBUG = false;
 
 const MOBILE = window.mobile() || window.innerWidth < 500 || window.innerHeight < 500;
 
@@ -386,6 +386,9 @@ class Ball {
             let score = map(this.distTilTarget, 1, 9, 6, 1);
             score = floor(score);
             score = constrain(score, 1, 6);
+            if (score == 5) {
+                score = 6;
+            }
             playSound(window.sounds.ballHit);
             return score;
         }
@@ -399,15 +402,15 @@ class ScoreBoard {
             this.textSize = 18;
         }
 
-        this.font = config.preGameScreen.fontFamily;
+        this.font = config.settings.scoreboardFont;
 
         this.height = 70;
         this.horizontalOffset = 20;
-        this.horizontalPadding = 20;
+        this.horizontalPadding = 70;
 
         this.rect = new Rectangle(
             width / 2 - stadium.size.width / 2 + this.horizontalOffset,
-            height - this.height - 10,
+            height / 2 + stadium.size.height / 2 - this.height - 10,
             stadium.size.width - this.horizontalOffset * 2,
             this.height
         );
@@ -415,6 +418,7 @@ class ScoreBoard {
         this.textColor = 0;
 
         this.rect.cornerRadius = 20;
+
     }
 
     draw(game) {
@@ -428,25 +432,31 @@ class ScoreBoard {
         textAlign(LEFT, CENTER);
         textFont(this.font);
         text(`Wickets: ${game.tournament.wickets}`, this.rect.x + this.horizontalPadding, this.rect.center().y);
-        textAlign(CENTER, CENTER);
-        text(`Balls: ${game.tournament.balls}`, this.rect.center().x, this.rect.center().y);
         textAlign(RIGHT, CENTER);
-        text(`Overs: ${game.tournament.overs}`, this.rect.right() - this.horizontalPadding, this.rect.center().y);
+        text(`Balls: ${game.tournament.balls}`, this.rect.right() - this.horizontalPadding, this.rect.center().y);
         textAlign(CENTER, TOP);
 
         textAlign(RIGHT, TOP);
-        text(`Score: ${game.tournament.score}`, width / 2 - this.textSize, this.textSize / 2);
+        text(
+            `Score: ${game.tournament.score}`,
+            width / 2 - this.textSize,
+            height / 2 - stadium.size.height / 2 + this.textSize
+        );
 
         textAlign(LEFT, TOP);
-        text(`Goal: ${game.tournament.againstScore}`, width / 2 + this.textSize, this.textSize / 2);
+        text(
+            `Goal: ${game.tournament.againstScore}`,
+            width / 2 + this.textSize,
+            height / 2 - stadium.size.height / 2 + this.textSize
+        );
 
         textAlign(CENTER, TOP);
         text(
             `${Teams[game.tournament.teamIndex].name} : ${
-                Teams[game.tournament.teamIndex].players[game.tournament.currentPlayerIndex].name
+            Teams[game.tournament.teamIndex].players[game.tournament.currentPlayerIndex].name
             }`,
             width / 2,
-            this.textSize * 2
+            height / 2 - stadium.size.height / 2 + this.textSize * 2.3
         );
     }
 }
@@ -736,7 +746,7 @@ class Player {
         legsAnim();
     }
 
-    update() {}
+    update() { }
 
     draw(offset) {
         this.leftLeg.draw(offset);
@@ -780,12 +790,32 @@ class Billboard {
         let adRect = Rectangle.FromPosition(this.pos.x, this.pos.y, this.size.width * 0.8, this.size.height * 0.8);
 
         this.ad = new Ad(window.images.ad, adRect);
+    
+        this.bgImage = window.images.scoreboardBackground;
+
+        let or = {
+            width: this.rect.w / this.bgImage.width,
+            height: this.rect.h / this.bgImage.height
+        }
+
+        let coverRatio = Math.max(or.width, or.height);
+        let bgWidth = this.bgImage.width * coverRatio;
+        let bgHeight = this.bgImage.height * coverRatio;
+
+        this.bgImageSize = {
+            width: bgWidth,
+            height: bgHeight
+        };
     }
 
     draw() {
         noStroke();
         fill(this.color);
         this.rect.draw();
+
+        imageMode(CENTER);
+        image(this.bgImage, this.rect.center().x, this.rect.center().y, this.rect.w, this.rect.h, this.img.width / 2 - this.bgImageSize.width / 2, this.img.height / 2 - this.bgImageSize.height / 2, this.bgImageSize.width, this.bgImageSize.height);
+        imageMode(CORNER);
 
         push();
         translate(this.pos.x, this.pos.y);
@@ -828,6 +858,12 @@ class Game {
         this.pauseButton = new PauseButton(() => {
             this.paused = !this.paused;
             this.ballcd = TimeGap;
+
+            if (this.paused) {
+                window.sounds.theme.setVolume(0);
+            } else {
+                window.sounds.theme.setVolume(parseFloat(config.settings.volume));
+            }
         });
 
         let rowLength = 4;
@@ -1235,6 +1271,8 @@ class Game {
                 this.particles.push(ft);
 
                 this.tournament.score += score;
+
+                this.score += score;
             }
 
             if (this.player) {
@@ -1556,7 +1594,7 @@ class Game {
 
                 if (this.delayBeforeExit < 0) {
                     if (this.lastPress && !mouseIsPressed) {
-                        window.setEndScreenWithScore();
+                        window.setEndScreenWithScore(this.score);
                     }
                     this.lastPress = mouseIsPressed;
                 }

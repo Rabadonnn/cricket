@@ -73,7 +73,20 @@
                 {
                     "key": "fontFamily",
                     "header": "Google Font Name",
-                    "type": "text"
+                    "type": "dropdown",
+                    "options": [
+                        "Fredoka One",
+                        "Overpass",
+                        "Martel",
+                        "Roboto",
+                        "Noto Sans HK",
+                        "Alfa Slab One",
+                        "Staatliches",
+                        "Patrick Hand",
+                        "Changa",
+                        "Do Hyeon",
+                        "Bree Serif"
+                    ]
                 },
                 {
                     "key": "showLeaderboardButton",
@@ -122,6 +135,29 @@
                     "key": "instructions3",
                     "type": "text",
                     "header": "Instructions Text 3"
+                },
+                {
+                    "key": "scoreboardFont",
+                    "header": "Google font for scoreboard",
+                    "type": "dropdown",
+                    "options": [
+                        "Fredoka One",
+                        "Overpass",
+                        "Martel",
+                        "Roboto",
+                        "Noto Sans HK",
+                        "Alfa Slab One",
+                        "Staatliches",
+                        "Patrick Hand",
+                        "Changa",
+                        "Do Hyeon",
+                        "Bree Serif"
+                    ]
+                },
+                {
+                    "key": "scoreboardBackground",
+                    "header": "Scoreboard background image",
+                    "type": "image"
                 },
                 {
                     "key": "stadium",
@@ -395,6 +431,8 @@
             "instructions1": "Tap / Spacebar to place blocks",
             "instructions2": "Place new blocks over the old ones",
             "instructions3": "Have fun!",
+            "scoreboardFont": "Fredoka One",
+            "scoreboardImage": "assets/scoreboard_background.png",
             "textColor": "#000",
             "stadium": "assets/cricket_stadium.png",
             "teams": {
