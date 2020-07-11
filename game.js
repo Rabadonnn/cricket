@@ -49,7 +49,7 @@ function init() {
     stadium.init();
 
     let bx = width / 2 + stadium.size.width * 0.12;
-    let by = (height / 2) * 1.2;
+    let by = (stadium.size.height / 2) * 1.2;
     BatPos = createVector(bx, by);
     MaxBatAngle = -PI * 0.6;
     BatAngle = -PI / 10;
