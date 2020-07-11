@@ -1148,8 +1148,6 @@ class Game {
 
         this.swappingPlayer = true;
 
-        this.resetBalls();
-
         this.initPlayerSwapAnim();
 
         if (showX) {
