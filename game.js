@@ -390,6 +390,11 @@ class Ball {
                 score = 6;
             }
             playSound(window.sounds.ballHit);
+
+            if (score == 6) {
+                playSound(window.sounds.runSound);
+            }
+
             return score;
         }
     }
@@ -787,10 +792,13 @@ class Billboard {
         this.pos = createVector(width / 2, height / 4);
         this.rect = Rectangle.FromPosition(this.pos.x, this.pos.y, this.size.width, this.size.height);
 
-        let adRect = Rectangle.FromPosition(this.pos.x, this.pos.y, this.size.width * 0.8, this.size.height * 0.8);
+        this.adRect = Rectangle.FromPosition(this.pos.x, this.pos.y, this.size.width * 0.8, this.size.height * 0.8);
 
-        this.ad = new Ad(window.images.ad, adRect);
-    
+        this.adTime = parseInt(config.settings.adTime);
+
+        this.currentAdIndex = 0;
+        this.makeAd();
+
         this.bgImage = window.images.scoreboardBackground;
 
         let or = {
@@ -806,6 +814,19 @@ class Billboard {
             width: bgWidth,
             height: bgHeight
         };
+    }
+
+    makeAd() {
+        this.currentAdIndex++;
+        if (this.currentAdIndex == window.images.ads.length) {
+            this.currentAdIndex = 0;
+        }
+        this.ad = new PopupImage(window.images.ads[this.currentAdIndex], this.rect.center().x, this.rect.center().y, this.adRect.h);
+        this.ad.easeInEasing = "easeInQuad";
+        this.ad.easeOutEasing = "easeOutQuad";
+        this.ad.duration = this.adTime;
+        this.ad.easeInDuration = 0.2;
+        this.ad.easeOutDuration = 0.05;
     }
 
     draw() {
@@ -825,23 +846,10 @@ class Billboard {
         pop();
 
         this.ad.draw();
-    }
-}
 
-class Ad {
-    constructor(img, rect) {
-        this.img = img;
-        this.maxRect = rect;
-        this.size = calculateAspectRatioFit(this.img.width, this.img.height, this.maxRect.w, this.maxRect.h);
-    }
-
-    draw() {
-        push();
-        translate(this.maxRect.center().x, this.maxRect.center().y);
-        imageMode(CENTER);
-        image(this.img, 0, 0, this.size.width, this.size.height);
-        imageMode(CORNER);
-        pop();
+        if (this.ad.dead) {
+            this.makeAd();
+        }
     }
 }
 
@@ -1542,6 +1550,9 @@ class Game {
             let size = calculateAspectRatioFit(this.bgImage.width, this.bgImage.height, width, height);
             this.bgImageWidth = size.width;
             this.bgImageHeight = size.height;
+        } else if (config.preGameScreen.backgroundMode == "stretch") {
+            this.bgImageWidth = width;
+            this.bgImageHeight = height;
         } else {
             let originalRatios = {
                 width: window.innerWidth / this.bgImage.width,
@@ -1552,11 +1563,16 @@ class Game {
             this.bgImageWidth = this.bgImage.width * coverRatio;
             this.bgImageHeight = this.bgImage.height * coverRatio;
         }
+
+        this.backgroundColor = color(config.preGameScreen.backgroundColor);
     }
 
     draw() {
         clear();
         try {
+            noStroke();
+            fill(this.backgroundColor);
+            rect(0, 0, width, height);
             image(
                 this.bgImage,
                 width / 2 - this.bgImageWidth / 2,

@@ -106,11 +106,14 @@ function loadImages() {
         }
     }
 
+    window.images.ads = [];
+    for (let [key, value] of Object.entries(config.settings.ads)) {
+        window.images.ads.push(loadImage(value));
+    }
+
     window.images.wickets = loadImage("assets/cricket_wickets.png");
 
     window.images.billboard = loadImage("assets/billboard.png");
-
-    window.images.ad = loadImage(config.settings.ad);
 
     window.images.xSign = loadImage("assets/x_sign.png");
 
@@ -140,6 +143,7 @@ function loadSounds() {
     window.sounds.ballHit = loadSound(config.settings.ballHit);
     window.sounds.ballThrow = loadSound(config.settings.ballThrow);
     window.sounds.whistle = loadSound(config.settings.whistle);
+    window.sounds.runSound = loadSound(config.settings.runSound);
 }
 
 window.preload = function () {

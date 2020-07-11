@@ -42,8 +42,14 @@
                     "type": "dropdown",
                     "options": [
                         "cover",
-                        "fit"
+                        "fit",
+                        "stretch"
                     ]
+                },
+                {
+                    "key": "backgroundColor",
+                    "header": "background color",
+                    "type": "color"
                 },
                 {
                     "key": "titleImage",
@@ -273,9 +279,26 @@
                     "type": "color"
                 },
                 {
-                    "key": "ad",
+                    "key": "ads",
                     "header": "Billboard ad",
-                    "type": "image"
+                    "type": "array",
+                    "fields": [
+                        {
+                            "key": "ad",
+                            "header": "Ad",
+                            "type": "image"
+                        }
+                    ]
+                },
+                {
+                    "key": "adTime",
+                    "header": "Ad duration (in seconds)",
+                    "type": "range",
+                    "options": {
+                        "maxValue": 30,
+                        "minValue": 3,
+                        "stepSize": 1
+                    }
                 },
                 {
                     "key": "ballHit",
@@ -290,6 +313,11 @@
                 {
                     "key": "whistle",
                     "header": "assets/whistle.wav",
+                    "type": "sound"
+                },
+                {
+                    "key": "runSound",
+                    "header": "6 runs sound",
                     "type": "sound"
                 },
                 {
@@ -417,7 +445,8 @@
             "buttonColor": "#000000",
             "buttonTextColor": "#ffffff",
             "backgroundImage": "assets/background.png",
-            "backgroundMode": "cover",
+            "backgroundMode": "stretch",
+            "backgroundColor": "#ffffff",
             "titleImage": "assets/placeholder_logo.jpg",
             "titleImageSize": 200,
             "fontFamily": "Overpass",
@@ -507,9 +536,15 @@
             "cricketBat": "assets/cricket_bat.png",
             "batColor": "#ffffff",
             "billboardColor": "#ffffff",
-            "ad": "assets/ad.png",
+            "ads": {
+                "ad1": "assets/banana.png",
+                "ad2": "assets/idle.png",
+                "ad3": "assets/ad.png"
+            },
+            "adTime": 3,
             "ballHit": "assets/ball_hit.wav",
             "whistle": "assets/whistle.wav",
+            "runSound": "assets/coin.wav",
             "ballThrow": "assets/ball_throw.wav",
             "theme": "assets/theme.mp3",
             "volume": "0.3"
