@@ -420,7 +420,7 @@ class ScoreBoard {
             this.height
         );
 
-        this.textColor = 0;
+        this.textColor = color(config.settings.textColor);
 
         this.rect.cornerRadius = 20;
     }
