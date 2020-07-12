@@ -411,7 +411,7 @@ class ScoreBoard {
 
         this.height = 70;
         this.horizontalOffset = 20;
-        this.horizontalPadding = 70;
+        this.horizontalPadding = 30;
 
         this.rect = new Rectangle(
             width / 2 - stadium.size.width / 2 + this.horizontalOffset,
@@ -423,7 +423,6 @@ class ScoreBoard {
         this.textColor = 0;
 
         this.rect.cornerRadius = 20;
-
     }
 
     draw(game) {
@@ -786,7 +785,6 @@ class TeamPlayer {
 class Billboard {
     constructor() {
         this.img = window.images.billboard;
-        this.color = color(config.settings.billboardColor);
         let rectSize = stadium.size.width * 0.7;
         this.size = calculateAspectRatioFit(this.img.width, this.img.height, rectSize, rectSize);
         this.pos = createVector(width / 2, height / 4);
@@ -799,7 +797,7 @@ class Billboard {
         this.currentAdIndex = 0;
         this.makeAd();
 
-        this.bgImage = window.images.scoreboardBackground;
+        this.bgImage = window.images.billboardBackground;
 
         let or = {
             width: this.rect.w / this.bgImage.width,
@@ -830,10 +828,6 @@ class Billboard {
     }
 
     draw() {
-        noStroke();
-        fill(this.color);
-        this.rect.draw();
-
         imageMode(CENTER);
         image(this.bgImage, this.rect.center().x, this.rect.center().y, this.rect.w, this.rect.h, this.img.width / 2 - this.bgImageSize.width / 2, this.img.height / 2 - this.bgImageSize.height / 2, this.bgImageSize.width, this.bgImageSize.height);
         imageMode(CORNER);

@@ -128,21 +128,6 @@
             "disabled": false,
             "fields": [
                 {
-                    "key": "instructions1",
-                    "type": "text",
-                    "header": "Instructions Text 1"
-                },
-                {
-                    "key": "instructions2",
-                    "type": "text",
-                    "header": "Instructions Text 2"
-                },
-                {
-                    "key": "instructions3",
-                    "type": "text",
-                    "header": "Instructions Text 3"
-                },
-                {
                     "key": "scoreboardFont",
                     "header": "Google font for scoreboard",
                     "type": "dropdown",
@@ -161,8 +146,8 @@
                     ]
                 },
                 {
-                    "key": "scoreboardBackground",
-                    "header": "Scoreboard background image",
+                    "key": "billboardBackground",
+                    "header": "Billboard background image",
                     "type": "image"
                 },
                 {
@@ -271,11 +256,6 @@
                 {
                     "key": "batColor",
                     "header": "Bat color",
-                    "type": "color"
-                },
-                {
-                    "key": "billboardColor",
-                    "header": "Billboard image color",
                     "type": "color"
                 },
                 {
@@ -457,11 +437,8 @@
             "soundDisabledIcon": "assets/sound_off.png"
         },
         "settings": {
-            "instructions1": "Tap / Spacebar to place blocks",
-            "instructions2": "Place new blocks over the old ones",
-            "instructions3": "Have fun!",
             "scoreboardFont": "Fredoka One",
-            "scoreboardImage": "assets/scoreboard_background.png",
+            "billboardBackground": "assets/scoreboard_background.png",
             "textColor": "#000",
             "stadium": "assets/cricket_stadium.png",
             "teams": {
@@ -535,7 +512,6 @@
             "cricketBall": "assets/cricket_ball.png",
             "cricketBat": "assets/cricket_bat.png",
             "batColor": "#ffffff",
-            "billboardColor": "#ffffff",
             "ads": {
                 "ad1": "assets/banana.png",
                 "ad2": "assets/idle.png",

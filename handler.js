@@ -49,7 +49,7 @@ window.soundEnabled = true;
 
 // can change this to any screen for deubugging purposes
 
-window.currentScreen = "gameScreen";
+window.currentScreen = "preGameScreen";
 window.setScreen = function (screenName) {
     window.currentScreen = screenName;
     screenManager.forceUpdate();
@@ -117,7 +117,7 @@ function loadImages() {
 
     window.images.xSign = loadImage("assets/x_sign.png");
 
-    window.images.scoreboardBackground = loadImage(config.settings.scoreboardImage);
+    window.images.billboardBackground = loadImage(config.settings.billboardBackground);
 }
 
 function loadPlayerImages() {
