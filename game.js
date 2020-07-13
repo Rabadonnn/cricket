@@ -1323,11 +1323,6 @@ class Game {
             this.nextPlayer();
         }
 
-        if (this.tournament.balls == 0 && !this.endRound && (this.ball.passedTarget || this.ball.beenHit)) {
-            this.nextPlayer(false);
-            this.endRound = true;
-        }
-
         if (!this.settingMatch) {
             if (this.tournament.score >= this.tournament.againstScore) {
                 this.tournament.wins++;
@@ -1343,7 +1338,7 @@ class Game {
                 return;
             }
 
-            if (this.tournament.wickets == 0) {
+            if (this.tournament.wickets == 0 || (this.tournament.balls == 0 && !this.endRound && (this.ball.passedTarget || this.ball.beenHit))) {
                 console.log("lost match");
                 if (this.tournament.played - this.tournament.wins >= floor(Teams.length / 2)) {
                     this.particles.length = 0;
